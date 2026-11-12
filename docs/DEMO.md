@@ -1,44 +1,56 @@
 # 五分钟演示
 
-## 准备
+先运行 npm run build、npm run demo，打开 http://127.0.0.1:4173。
+只使用仓库的专用数据生成程序。可提前执行下列真实采集命令，避免演示时等待。
 
-`npm run build` 后运行 `npm run demo`，打开 http://127.0.0.1:4173。演示文件仅由专用程序生成。不要在演示时打开业务快照。
+## 0:00—1:00：从增长到清理后残留
 
-## 0:00—1:00：说明问题
+点击“加载缓存增长示例”，自动打开 A/B/C 三份合成快照。
+图片条目数量是 2 → 18 → 4。A → B 的 PixelBuffer 浅体积增加 512 KiB。
 
-“操作之后内存持续增长，先找增加的对象，再找持有者。”
+确认同一实例，切换“清理后调查”，搜索 PhotoEntry、类型选 object。
+解释：清理后的 4 个条目中，2 个基线就存在，另外 2 个属于新增后仍存活的候选。
+数量增长与存活提供调查证据，还需要结合业务预期。
 
-点击「加载缓存增长示例」，切换到「快照比较」。PixelBuffer 从 64 KiB 增长到 576 KiB，新增 16 个对象，共增长 512 KiB。
+## 1:00—2:00：沿引用找到持有者
 
-解释这是**浅体积合计**，不是整个进程 RSS。
+点击候选，当前快照自动切换到 C。查看最短根路径：
+root → Window → PhotoCache → Array → PhotoEntry。
 
-## 1:00—2:00：查到持有者
+查看入边/出边、收藏对象，再沿引用切换对象并使用前进/后退。
+切换支配树，展开缓存子树，观察当前直接子树的保留体积分布。
 
-回到对象列表，搜索 PhotoCache 并点击对象。自身只有 48 B，却保留约 577 KiB。
+## 2:00—3:00：共享对象与多条路径
 
-查看「最短根路径」：root → Window → PhotoCache。再查看「它引用谁」找到 entries 数组。点击 Array，沿数组索引查看 PhotoEntry 及 pixels。
+打开 examples/shared.heapsnapshot 到 A。搜索 A：
+ID 为 9007199254740993，界面不会丢失精度。A 自身 10 B、B 自身 20 B，
+shared 自身 30 B；A/B 各自的保留体积不包含 shared，因为它有两个持有者。
 
-解释保留体积为什么能找到“小容器持有大量数据”的问题。
+搜索 shared，打开“多条根路径”，看到经 A 和经 B 的两条路径。
+解释路径搜索的 complete 与预算提示；循环引用组同样是调查线索，不自动视为泄漏。
 
-## 2:00—3:00：共享对象不会重复计算
+## 3:00—4:00：真实采集与分配来源
 
-打开 `examples/shared.heapsnapshot`。A 的 ID 为 9007199254740993，在 JavaScript Number 精确范围之外，但界面与导出完整保存。
-
-A 自身 10 B、B 自身 20 B、shared 自身 30 B。shared 同时被 A 和 B 持有，因此 A 的保留体积仍是 10 B；shared 的直接支配者是 root。
-
-## 3:00—4:00：真实数据复核
+预先生成真实测试数据（输出目录应是新目录）：
 
 ```sh
-npm run fixtures
-node bin/moonheap.mjs diff work/real/before.heapsnapshot work/real/growth.heapsnapshot --same-isolate --query MoonHeapMarker
-node bin/moonheap.mjs diff work/real/growth.heapsnapshot work/real/cleanup.heapsnapshot --same-isolate --query MoonHeapMarker
+node bin/moonheap.mjs capture --scenario examples/cache-scenario.mjs --output-dir work/demo-capture --iterations 2 --allocation-traces
+node bin/moonheap.mjs investigate work/demo-capture/before.heapsnapshot work/demo-capture/growth.heapsnapshot work/demo-capture/cleanup.heapsnapshot --manifest work/demo-capture/capture.json --exclude-conflicts --query MoonHeapCapturedEntry --kind object --json
 ```
 
-展示 +64 与 −64。说明这三份文件由同一采集进程生成，才能声明同 isolate；普通跨进程快照默认只比较聚合数量。
+真实对象数是 0 → 16 → 1。将三份文件拖入 A/B/C，确认来源后搜索 MoonHeapCapturedEntry。
+查看唯一候选的“分配来源”，通常可看到 cache-scenario.mjs 的 exercise。
+当前快照缺少记录时回查增长快照并标明；V8 没有留下记录时展示缺失原因，不猜测代码行。
 
-## 4:00—5:00：展示工程交付
+## 4:00—5:00：交付完整证据
 
-导出当前报告，打开 CI 查看三个后端和两个 Node 版本的结果。指出 MoonBit 中的 parser/graph/analysis/diff，说明计算不在网页 JavaScript 中重新实现。
+选择 HTML 报告，导出全部匹配结果。报告包含查询条件和数据，文件可独立打开。
+切到对象列表导出：即使页面只显示 25 条，也会导出全部匹配对象。
+CSV 供表格查看，JSON 供程序处理，超过明确预算会报错。
 
-最后说明边界：离线分析、64 MiB 输入上限、WeakMap 条件引用保守处理、增长不自动等于泄漏。后续计划降低解析峰值内存并改善条件引用语义。
+保存工作区，刷新，恢复三份文件、筛选与书签。删除已保存数据只删除浏览器存储，
+清空当前工作区只关闭当前分析，二者行为分开。
 
+展示 GitHub CI、Mooncakes 包、命令行和预编译发行版。核心算法在 MoonBit，
+CLI/网页复用同一引擎。说明默认每份 256 MiB、可配置预算、WeakMap 保守语义，
+不把保留体积当 RSS，也不输出自动泄漏判决。

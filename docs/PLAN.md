@@ -1,56 +1,38 @@
-# MoonHeap implementation and acceptance plan
+# MoonHeap 开发规划与完成记录
 
-Offline V8 `.heapsnapshot` analysis, with a portable MoonBit library, Node CLI,
-and an offline browser explorer running the same compiled library in a worker.
+项目交付形式：可复用 MoonBit 内核、Node 命令行、本地网页、独立发行包。
+主线是让用户能采集、解释增长、查找清理后的残留、沿引用定位，并保存证据。
 
-## Milestones (each validated and pushed separately)
+## 第一轮：基础分析
 
-- [x] Architecture, scope and acceptance criteria.
-- [x] Immutable public model, limits, errors and synthetic fixtures.
-- [x] Strict metadata-driven parser: exact IDs, reordered fields, malformed data.
-- [x] Forward/reverse reference indexes and retaining-edge policy.
-- [x] Reachability, dominators and retained bytes, checked by an independent oracle.
-- [x] Group/ranking queries, references and shortest root paths.
-- [x] Aggregate comparison and explicitly confirmed same-isolate identity comparison.
-- [x] Versioned JSON interface and CLI with resource limits and meaningful exit codes.
-- [x] Real V8 baseline/growth/cleanup snapshots and differential verification.
-- [x] Offline browser explorer with worker isolation.
-- [x] Cross-backend CI, scale benchmark and consumer example.
-- [x] Documentation, proposal, distribution packaging and Mooncakes publication.
+已完成元数据解析、精确 ID、双向引用、根可达性、支配分析、对象/类型查询、
+聚合和身份差分、CLI、真实 V8 验证、网页、CI 与发布。0.1.0 已发布。
 
-## Delivered evidence
+## 第二轮：完整调查流程
 
-Version 0.1.0 is published as `white-bear233/moonheap`. An independent consumer
-installed it from the registry and ran the public API on JS and Wasm GC.
-Linux native is verified in CI. Browser workflows, cancellation, real V8 data
-and scaling measurements are recorded in [VALIDATION.md](VALIDATION.md).
+| 部分 | 实现 | 验收 |
+|---|---|---|
+| 导入 | Decoder 逐块解析、可配置预算、读取进度 | 多种跨块宽度、转义/溢出、65 MiB 文件 |
+| 引用调查 | 多条根路径、循环组、支配树索引与图 | 菱形/循环/弱边、预算、浏览器导航 |
+| 来源 | 对象位置、分配帧、同实例跨快照回查 | 合成字段与真实带跟踪采集 |
+| 比较 | 保留变化、独立分页、条件过滤 | 自身不变而保留增长、分页相互独立 |
+| 三阶段 | 基线/增长/清理的存活筛选 | 0→16→1、数量回到基线仍有新存活 |
+| 报告 | 全匹配 JSON/CSV/HTML、超限拒绝 | 1205 行跨页、1204 个树子节点、转义与 ID |
+| 采集 | setup/exercise/cleanup、分配跟踪、来源清单 | Node 22/24、哈希校验与篡改拒绝 |
+| 网页 | 三快照、树图、循环、历史、书签、IndexedDB | 刷新恢复、取消、错误恢复、手机布局 |
+| 分发 | 0.2.0 文档、申报稿、Mooncakes、预编译包 | CI、独立消费者、解压运行 |
 
-The GitHub release workflow builds source + precompiled CLI/browser ZIPs for
-version tags; release status and downloads are available on the repository's
-[Releases page](https://github.com/white-bear233/MoonHeap/releases).
+逐项清单见 [COMPLETENESS.md](COMPLETENESS.md)，可复现结果见 [VALIDATION.md](VALIDATION.md)。
+各独立部分验证后 commit/push 到 main，记录见 [提交历史](https://github.com/white-bear233/MoonHeap/commits/main)。
 
-## Semantic contract
+## 架构与质量要求
 
-- Decode fields by metadata; reject structural corruption.
-- Preserve IDs as exact decimal strings even beyond JS safe integers.
-- Shallow sizes are reported `self_size`, not RSS or complete native memory.
-- `snapshot-strong-v1` excludes weak edges, self edges and non-root shortcuts.
-  Root shortcuts remain. WeakMap conditional relationships are identified and
-  reported as a caveat: graph retention is not a garbage-collection prediction.
-- Dominance covers root-reachable nodes only. Unreachable retained sizes are null.
-- Group summaries sum shallow sizes, never sum arbitrary retained subtrees.
-- Aggregate diffs work across processes; identity diffs require same-isolate
-  confirmation and reject contradictory overlapping IDs.
-- Growth is an investigation lead, not an automatic memory-leak verdict.
+- 核心计算及报告由 MoonBit 实现，两个宿主不复制算法。
+- ID 无损表示，图和索引是抽象类型。
+- 引用策略公开；不可达、缺失、搜索未穷尽不以零或成功掩盖。
+- 来源身份需要确认，文件清单可复核；增长不自动等于泄漏。
+- 大文件逐块读取；图整体驻留内存，预算和真实测量公开。
+- 真实数据、独立删除节点 oracle、跨后端和实际浏览器共同验证。
 
-## Acceptance
-
-Malformed-input and precision tests; weak/shared/cyclic graphs; brute-force
-node-removal oracle; seeded random graphs; real Node baseline/growth/cleanup;
-CLI errors; browser interaction; JS/Wasm/native core checks; reproducible scale
-measurements. Every user-facing calculation goes through the MoonBit library.
-
-Original Apache-2.0 implementation. Consult Node/V8 and Chrome DevTools for
-format semantics. MemLab/v8-profiler-rs are references, not bundled dependencies.
-No claim of full MemLab compatibility, live collection, automatic repair, or
-Chrome-specific page/debugger ownership heuristics.
+本轮完成标准是上述使用流程可实际走通。在线进程长期监控、原生 MoonBit 堆采集、
+完整 Chrome 页面归属/WeakMap 启发式以及磁盘外存图算法不在此次范围内。
