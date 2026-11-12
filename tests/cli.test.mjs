@@ -53,7 +53,7 @@ test('CLI rejects corrupt and oversized input and contradictory identity', async
     assert.equal(cli('validate', invalid).status, 2);
     const large = join(dir, 'large.heapsnapshot');
     const f = await open(large, 'w'); await f.truncate(64 * 1024 * 1024 + 1); await f.close();
-    assert.equal(cli('validate', large).status, 3);
+    assert.equal(cli('validate', large, '--max-mib', '64').status, 3);
     const changed = join(dir, 'changed.heapsnapshot');
     await writeFile(changed, (await readFile(join(root, fixture), 'utf8')).replace('"A"', '"Other"'));
     assert.equal(cli('diff', fixture, changed, '--same-isolate').status, 4);

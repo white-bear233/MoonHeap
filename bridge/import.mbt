@@ -5,6 +5,14 @@ let decoders : Map[Int32, @heap.Decoder] = Map([])
 let serial : Array[Int32] = [0]
 
 ///|
+#export_name("export_report")
+pub fn export_report(handle : Int32, request : String) -> String {
+  @heap.success(@json.to_json(inspector.export_report(handle, request))) catch {
+    e => @heap.failure(e)
+  }
+}
+
+///|
 fn current_decoder(handle : Int32) -> @heap.Decoder raise @heap.HeapError {
   match decoders.get(handle) {
     Some(d) => d

@@ -9,7 +9,7 @@ async (page) => {
   await page.locator('#identity').check(); await settle();
   check((await page.locator('#identity-result').textContent()).includes('新增 32'), 'identity growth count');
   await page.locator('#next').click(); await settle();
-  check(await page.locator('#changes-body tr').count() === 8, 'identity changes second page');
+  check(await page.locator('#changes-body tr').count() === 11, 'identity changes second page');
   await page.locator('#prev').click(); await settle();
   await page.locator('#table-body').getByRole('button', { name: 'PhotoCache', exact: true }).click(); await settle();
   check(await page.locator('#table-body tr').count() === 1, 'drill down to exact type/name');

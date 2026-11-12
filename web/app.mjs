@@ -168,7 +168,7 @@ function renderTable(data) {
     $('changes-body').replaceChildren();
     for (const change of data.changes) {
       const row = elem('tr'), c = cell(row, ''); c.append(nodeLink(change, change.status === 'removed' ? 0 : 1), elem('span', '@' + change.id, 'subline'));
-      cell(row, ({ added: '新增', removed: '消失', resized: '体积变化' })[change.status]);
+      cell(row, ({ added: '新增', removed: '消失', resized: '体积变化', retention_changed: '保留体积变化' })[change.status]);
       numeric(row, change.before_bytes, v => v == null ? '—' : bytes(v)); numeric(row, change.after_bytes, v => v == null ? '—' : bytes(v));
       $('changes-body').append(row);
     }

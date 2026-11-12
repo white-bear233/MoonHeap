@@ -11,6 +11,62 @@ fn frame_json(f : AllocationFrame) -> Json {
 }
 
 ///|
+fn Inspector::source_query(
+  self : Inspector,
+  handle : Int32,
+  req : Json,
+) -> Json raise HeapError {
+  let current = self.get(handle)
+  let node = current.graph.snapshot.node(
+    selected_node(current.graph.snapshot, req),
+  )
+  let mut source_handle = handle
+  let mut result = advanced_query(current, req, "source", 0, 100)
+  let frames = array(field(result, "frames"), "frames")
+  match optional(req, "fallback_handle") {
+    Some(value) => {
+      guard bool_option(req, "same_isolate", false) else {
+        raise Identity(
+          "allocation-source fallback requires same-isolate confirmation",
+        )
+      }
+      let fallback = integer(value, "fallback_handle")
+      if frames.is_empty() {
+        let old = self.get(fallback)
+        match old.graph.snapshot.find_id(node.id) {
+          Some(index) => {
+            let previous = old.graph.snapshot.nodes[index]
+            guard previous.kind == node.kind && previous.name == node.name else {
+              raise Identity("source fallback identity conflict")
+            }
+            result = advanced_query(
+              old,
+              { "id": @json.to_json(node.id) },
+              "source",
+              0,
+              100,
+            )
+            source_handle = fallback
+          }
+          None => ()
+        }
+      }
+    }
+    None => ()
+  }
+  match result {
+    Object(m) => {
+      let fields = m.copy()
+      fields["node"] = node_json(current, node)
+      fields["source_snapshot_handle"] = @json.to_json(source_handle)
+      fields["used_fallback"] = @json.to_json(source_handle != handle)
+      @json.to_json(fields)
+    }
+    _ => result
+  }
+}
+
+///|
 fn advanced_query(
   a : Analysis,
   req : Json,

@@ -267,6 +267,7 @@ pub fn Inspector::query(
       }
     }
     "node" => node_json(a, s.node(selected_node(s, req)))
+    "source" => self.source_query(handle, req)
     "dominated" =>
       node_page_json(a, a.dominated(selected_node(s, req), offset~, limit~))
     "references" => {

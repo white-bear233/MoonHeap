@@ -113,10 +113,12 @@ type Inspector
 pub fn Inspector::accept(Self, Snapshot) -> Int32 raise HeapError
 pub fn Inspector::close(Self, Int32) -> Unit
 pub fn Inspector::diff(Self, Int32, Int32, String) -> @json.Json raise HeapError
+pub fn Inspector::export_report(Self, Int32, String) -> String raise HeapError
 pub fn Inspector::investigate(Self, Int32, Int32, Int32, String) -> @json.Json raise HeapError
 pub fn Inspector::new(max_snapshots? : Int32) -> Self
 pub fn Inspector::open(Self, String, limits? : Limits) -> Int32 raise HeapError
 pub fn Inspector::query(Self, Int32, String) -> @json.Json raise HeapError
+pub fn Inspector::report(Self, Int32, String) -> @json.Json raise HeapError
 
 pub(all) struct Investigation {
   mode : String

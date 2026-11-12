@@ -10,6 +10,8 @@ pub fn close_snapshot(Int32) -> Unit
 
 pub fn diff_snapshots(Int32, Int32, String) -> String
 
+pub fn export_report(Int32, String) -> String
+
 pub fn feed_snapshot(Int32, String) -> String
 
 pub fn finish_snapshot(Int32) -> String
