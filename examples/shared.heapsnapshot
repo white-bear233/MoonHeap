@@ -1,0 +1,2 @@
+{"snapshot":{"meta":{"node_fields":["type","name","id","self_size","edge_count"],"node_types":[["synthetic","object"],"string","number","number","number"],"edge_fields":["type","name_or_index","to_node"],"edge_types":[["property","weak","shortcut","internal","element","hidden"],"string_or_number","node"]},"node_count":4,"edge_count":4},"nodes":[0,0,1,0,2,1,1,9007199254740993,10,1,1,2,5,20,1,1,3,7,30,0],"edges":[0,1,5,0,2,10,0,3,15,0,3,15],"strings":["root","A","B","shared"]}
+

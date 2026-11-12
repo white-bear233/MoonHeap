@@ -4,3 +4,9 @@ target/
 target
 .mooncakes/
 .moonagent/
+dist/
+web/engine.mjs
+work/
+node_modules/
+*.heapsnapshot
+!examples/*.heapsnapshot

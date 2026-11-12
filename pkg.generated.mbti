@@ -3,12 +3,17 @@ package "white-bear233/moonheap"
 
 import {
   "moonbitlang/core/debug",
+  "moonbitlang/core/json",
 }
 
 // Values
 pub fn compare(Snapshot, Snapshot, same_isolate? : Bool) -> SnapshotDiff raise HeapError
 
+pub fn failure(HeapError) -> String
+
 pub fn parse(String, limits? : Limits) -> Snapshot raise HeapError
+
+pub fn success(@json.Json) -> String
 
 // Errors
 #derive(@debug.Debug)
@@ -88,6 +93,16 @@ pub(all) struct GroupDelta {
   before_bytes : Int64
   after_bytes : Int64
 }
+
+pub struct Inspector {
+  sessions : Map[Int32, Analysis]
+  mut next_id : Int32
+}
+pub fn Inspector::close(Self, Int32) -> Unit
+pub fn Inspector::diff(Self, Int32, Int32, String) -> @json.Json raise HeapError
+pub fn Inspector::new() -> Self
+pub fn Inspector::open(Self, String, limits? : Limits) -> Int32 raise HeapError
+pub fn Inspector::query(Self, Int32, String) -> @json.Json raise HeapError
 
 #derive(@debug.Debug)
 pub(all) struct Limits {

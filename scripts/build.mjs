@@ -1,0 +1,13 @@
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, copyFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+const root = fileURLToPath(new URL('../', import.meta.url));
+const result = spawnSync('moon', ['build', 'bridge', '--target', 'js', '--release', '--deny-warn'], { cwd: root, stdio: 'inherit', shell: false });
+if (result.error) throw result.error;
+if (result.status !== 0) process.exit(result.status ?? 1);
+for (const folder of ['dist', 'web']) mkdirSync(resolve(root, folder), { recursive: true });
+const source = resolve(root, '_build/js/release/build/bridge/bridge.js');
+copyFileSync(source, resolve(root, 'dist/moonheap.mjs'));
+copyFileSync(source, resolve(root, 'web/engine.mjs'));
+console.log('Built the shared MoonBit analysis engine.');

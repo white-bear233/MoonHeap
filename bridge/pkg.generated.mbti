@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "white-bear233/moonheap/bridge"
+
+// Values
+pub fn close_snapshot(Int32) -> Unit
+
+pub fn diff_snapshots(Int32, Int32, String) -> String
+
+pub fn load_snapshot(String) -> String
+
+pub fn query_snapshot(Int32, String) -> String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

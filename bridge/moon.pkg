@@ -1,0 +1,10 @@
+import {
+  "white-bear233/moonheap" @heap,
+  "moonbitlang/core/json",
+}
+
+pkgtype(kind: "foreign_library")
+
+options(
+  link: { "js": { "format": "esm" } },
+)
