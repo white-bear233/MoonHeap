@@ -1,5 +1,5 @@
 ///|
-pub struct Graph {
+struct Graph {
   snapshot : Snapshot
   incoming_offsets : Array[Int32]
   incoming_edges : Array[Int32]

@@ -1,5 +1,5 @@
 ///|
-pub struct Inspector {
+struct Inspector {
   sessions : Map[Int32, Analysis]
   mut next_id : Int32
 }

@@ -69,7 +69,7 @@ pub(all) struct Edge {
 }
 
 ///|
-pub struct Snapshot {
+struct Snapshot {
   nodes : Array[Node]
   edges : Array[Edge]
   ids : Map[String, Int32]

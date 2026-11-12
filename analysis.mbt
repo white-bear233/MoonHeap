@@ -1,5 +1,5 @@
 ///|
-pub struct Analysis {
+struct Analysis {
   graph : Graph
   idom : Array[Int32]
   retained : Array[Int64]

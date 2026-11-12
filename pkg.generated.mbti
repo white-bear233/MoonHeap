@@ -26,13 +26,7 @@ pub(all) suberror HeapError {
 pub fn HeapError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
-pub struct Analysis {
-  graph : Graph
-  idom : Array[Int32]
-  retained : Array[Int64]
-  reachable_count : Int32
-  iterations : Int32
-}
+type Analysis
 pub fn Analysis::dominated(Self, Int32, offset? : Int32, limit? : Int32) -> NodePage raise HeapError
 pub fn Analysis::graph(Self) -> Graph
 pub fn Analysis::groups(Self) -> Array[Group]
@@ -60,15 +54,7 @@ pub(all) struct EdgePage {
   offset : Int32
 }
 
-pub struct Graph {
-  snapshot : Snapshot
-  incoming_offsets : Array[Int32]
-  incoming_edges : Array[Int32]
-  retaining : Array[Bool]
-  distance : Array[Int32]
-  parent_edge : Array[Int32]
-  conditional_edges : Int32
-}
+type Graph
 pub fn Graph::analyze(Self) -> Analysis raise HeapError
 pub fn Graph::is_retaining(Self, Int32) -> Bool raise HeapError
 pub fn Graph::references(Self, Int32, incoming? : Bool, retaining_only? : Bool, offset? : Int32, limit? : Int32) -> EdgePage raise HeapError
@@ -94,10 +80,7 @@ pub(all) struct GroupDelta {
   after_bytes : Int64
 }
 
-pub struct Inspector {
-  sessions : Map[Int32, Analysis]
-  mut next_id : Int32
-}
+type Inspector
 pub fn Inspector::close(Self, Int32) -> Unit
 pub fn Inspector::diff(Self, Int32, Int32, String) -> @json.Json raise HeapError
 pub fn Inspector::new() -> Self
@@ -144,14 +127,7 @@ pub(all) struct ObjectChange {
   after_bytes : Int64?
 }
 
-pub struct Snapshot {
-  nodes : Array[Node]
-  edges : Array[Edge]
-  ids : Map[String, Int32]
-  root : Int32
-  total_size : Int64
-  limits : Limits
-}
+type Snapshot
 pub fn Snapshot::edge(Self, Int32) -> Edge raise HeapError
 pub fn Snapshot::edge_count(Self) -> Int32
 pub fn Snapshot::find_id(Self, String) -> Int32?
