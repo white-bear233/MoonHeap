@@ -132,8 +132,10 @@ fn parse_document(doc : Json, limits : Limits) -> Snapshot raise HeapError {
   let ed = offset(ef, "to_node")
   let node_meta = array(field(meta, "node_types"), "node_types")
   let edge_meta = array(field(meta, "edge_types"), "edge_types")
-  guard node_meta.length() == nf.length() && edge_meta.length() == ef.length() else {
-    raise Invalid("field/type metadata length mismatch")
+  // V8 13.x can include a legacy trailing node_types descriptor without a
+  // corresponding node field. Strides come exclusively from *_fields.
+  guard node_meta.length() >= nf.length() && edge_meta.length() >= ef.length() else {
+    raise Invalid("field/type metadata is incomplete")
   }
   let node_types = string_array(node_meta[nt], "node type names")
   let edge_types = string_array(edge_meta[et], "edge type names")

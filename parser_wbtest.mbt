@@ -6,6 +6,15 @@ fn tiny() -> String {
 }
 
 ///|
+test "V8 may emit unused trailing type descriptors" {
+  let source = tiny().replace(
+    old="\"number\",\"number\",\"number\"]",
+    new="\"number\",\"number\",\"number\",\"number\"]",
+  )
+  assert_eq(parse(source).node_count(), 4)
+}
+
+///|
 test "metadata parser preserves exact ids and shared edges" {
   let s = parse(tiny())
   assert_eq(s.node_count(), 4)
