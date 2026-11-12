@@ -1,0 +1,5 @@
+// import {
+//   "white-bear233/moonheap" @lib,
+// }
+
+pkgtype(kind: "executable")
