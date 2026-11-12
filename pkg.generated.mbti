@@ -1,0 +1,77 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "white-bear233/moonheap"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn parse(String, limits? : Limits) -> Snapshot raise HeapError
+
+// Errors
+#derive(@debug.Debug)
+pub(all) suberror HeapError {
+  Invalid(String)
+  Limit(String)
+  NotFound(String)
+  Identity(String)
+}
+pub fn HeapError::to_repr(Self) -> @debug.Repr
+
+// Types and methods
+#derive(Eq, @debug.Debug)
+pub(all) struct Edge {
+  index : Int32
+  source : Int32
+  target : Int32
+  kind : String
+  name : String
+}
+pub fn Edge::equal(Self, Self) -> Bool
+pub fn Edge::not_equal(Self, Self) -> Bool
+pub fn Edge::to_repr(Self) -> @debug.Repr
+
+#derive(@debug.Debug)
+pub(all) struct Limits {
+  max_chars : Int32
+  max_nodes : Int32
+  max_edges : Int32
+  max_strings : Int32
+  max_work : Int32
+}
+pub fn Limits::default() -> Self
+pub fn Limits::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
+pub(all) struct Node {
+  index : Int32
+  id : String
+  kind : String
+  name : String
+  self_size : Int64
+  edge_start : Int32
+  edge_count : Int32
+}
+pub fn Node::equal(Self, Self) -> Bool
+pub fn Node::not_equal(Self, Self) -> Bool
+pub fn Node::to_repr(Self) -> @debug.Repr
+
+pub struct Snapshot {
+  nodes : Array[Node]
+  edges : Array[Edge]
+  ids : Map[String, Int32]
+  root : Int32
+  total_size : Int64
+  limits : Limits
+}
+pub fn Snapshot::edge(Self, Int32) -> Edge raise HeapError
+pub fn Snapshot::edge_count(Self) -> Int32
+pub fn Snapshot::find_id(Self, String) -> Int32?
+pub fn Snapshot::node(Self, Int32) -> Node raise HeapError
+pub fn Snapshot::node_count(Self) -> Int32
+pub fn Snapshot::root_index(Self) -> Int32
+pub fn Snapshot::total_shallow_bytes(Self) -> Int64
+
+// Type aliases
+
+// Traits

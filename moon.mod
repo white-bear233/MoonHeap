@@ -19,7 +19,7 @@ repository = "https://github.com/white-bear233/MoonHeap"
 
 license = "Apache-2.0"
 
-keywords = ["heap", "v8", "memory", "profiling", "diagnostics"]
+keywords = [ "heap", "v8", "memory", "profiling", "diagnostics" ]
 
 preferred_target = "js"
 
