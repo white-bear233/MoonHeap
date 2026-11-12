@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp,readFile,rm,writeFile,open } from 'node:fs/promises';
+import { mkdtemp,readFile,rm,writeFile,open,mkdir,copyFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadFile,unwrap } from '../lib/host.mjs';
@@ -27,6 +27,9 @@ test('capture → streamed import → allocation source → surviving-object evi
     const exported=unwrap(export_report(handles[0],JSON.stringify({view:'investigate',growth_handle:handles[1],cleanup_handle:handles[2],same_isolate:true,query:'MoonHeapCapturedEntry',kind:'object',format:'html'})));
     assert.match(exported,/MoonHeapCapturedEntry/);
     assert.ok(!exported.includes('<script'));
+    // Browser acceptance uses the same real, allocation-tracked capture.
+    await mkdir('work/tracked',{recursive:true});
+    for(const stage of ['before','growth','cleanup']) await copyFile(join(dir,stage+'.heapsnapshot'),join('work/tracked',stage+'.heapsnapshot'));
   } finally { handles.forEach(close_snapshot); await rm(dir,{recursive:true,force:true}); }
 });
 

@@ -24,6 +24,6 @@ function snapshot(count) {
     edges: records.flatMap(n => n.edges.flatMap(([type,name,to]) => [type,name,to * 5])), strings
   }) + '\n';
 }
-for (const [name, count] of [['before',2],['growth',18],['cleanup',0]]) writeFileSync(folder + name + '.heapsnapshot', snapshot(count));
+for (const [name, count] of [['before',2],['growth',18],['cleanup',0],['residual',4]]) writeFileSync(folder + name + '.heapsnapshot', snapshot(count));
 console.log('Wrote deterministic synthetic cache examples.');
 

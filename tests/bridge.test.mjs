@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { load_snapshot, query_snapshot, diff_snapshots, close_snapshot } from '../dist/moonheap.mjs';
-test('shared bridge supports two snapshots and releases handles', async () => {
+test('shared bridge supports three snapshots and releases handles', async () => {
   const input = await readFile(new URL('../examples/shared.heapsnapshot', import.meta.url), 'utf8');
   const a = JSON.parse(load_snapshot(input)).data, b = JSON.parse(load_snapshot(input)).data, c = JSON.parse(load_snapshot(input)).data;
   try {

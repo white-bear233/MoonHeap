@@ -7,7 +7,8 @@ const routes = new Map([
   ['/index.html', ['web/index.html', 'text/html; charset=utf-8']],
   ...['app.mjs','worker.mjs','engine.mjs'].map(n => ['/' + n, ['web/' + n, 'text/javascript; charset=utf-8']]),
   ['/style.css', ['web/style.css', 'text/css; charset=utf-8']],
-  ...['before','growth','cleanup','shared'].map(n => ['/examples/' + n + '.heapsnapshot', ['examples/' + n + '.heapsnapshot', 'application/json']])
+  ['/workspace.css', ['web/workspace.css', 'text/css; charset=utf-8']],
+  ...['before','growth','cleanup','shared','residual'].map(n => ['/examples/' + n + '.heapsnapshot', ['examples/' + n + '.heapsnapshot', 'application/json']])
 ]);
 const port = Number(process.env.PORT ?? 4173);
 if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('Invalid PORT');
