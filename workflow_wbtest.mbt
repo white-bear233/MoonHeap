@@ -1,4 +1,41 @@
 ///|
+test "explicit exclusion never matches contradictory IDs or counts them as survivors" {
+  let a = graph_fixture(2, [(0, 1, "property")]).graph().analyze()
+  let b = graph_fixture(3, [(0, 1, "property"), (1, 2, "property")])
+    .graph()
+    .analyze()
+  let raw = graph_fixture(3, [(0, 1, "property"), (1, 2, "property")])
+  raw.nodes[2] = { ..raw.nodes[2], name: "reused", kind: "code", }
+  let c = raw.graph().analyze()
+  assert_true(
+    try {
+      ignore(investigate(a, b, c, same_isolate=true))
+      false
+    } catch {
+      _ => true
+    },
+  )
+  let result = investigate(a, b, c, same_isolate=true, exclude_conflicts=true)
+  assert_eq(result.excluded_ids, ["2"])
+  assert_eq(result.created, Some(0))
+  assert_eq(result.released, Some(0))
+  assert_eq(result.survivors.length(), 0)
+  let diff = b.compare(c, same_isolate=true, exclude_conflicts=true)
+  assert_eq(diff.aggregate.excluded_ids, ["2"])
+  assert_eq(diff.aggregate.survived, Some(2))
+  assert_true(!diff.changes.any(change => change.id == "2"))
+  let inspector = Inspector::new()
+  let before = inspector.accept(b.graph.snapshot)
+  let after = inspector.accept(c.graph.snapshot)
+  let csv = inspector.export_report(
+    before,
+    "{\"view\":\"diff\",\"after_handle\":\{after},\"same_isolate\":true,\"exclude_conflicts\":true,\"format\":\"csv\"}",
+  )
+  assert_true(csv.contains("identity_exclusions"))
+  assert_true(csv.contains("excluded_id_count"))
+}
+
+///|
 test "node and group filters preserve unreachable semantics" {
   let i = Inspector::new()
   let h = i.accept(graph_fixture(4, [(0, 1, "property"), (1, 2, "property")]))
@@ -23,6 +60,14 @@ test "tree and references reports include every child and meaningful edge column
   let i = Inspector::new()
   let h = i.accept(graph_fixture(1205, links))
   let report = i.report(h, "{\"view\":\"tree\"}")
+  assert_true(
+    try {
+      ignore(i.report(h, "{\"view\":\"diff\"}"))
+      false
+    } catch {
+      _ => true
+    },
+  )
   assert_eq(
     array(field(field(report, "data"), "items"), "items").length(),
     1204,

@@ -26,6 +26,7 @@ pub(all) struct SnapshotDiff {
   removed : Int32?
   survived : Int32?
   changes : Array[ObjectChange]
+  excluded_ids : Array[String]
 }
 
 ///|
@@ -34,6 +35,7 @@ pub fn compare(
   before : Snapshot,
   after : Snapshot,
   same_isolate~ : Bool = false,
+  exclude_conflicts~ : Bool = false,
 ) -> SnapshotDiff raise HeapError {
   let groups : Map[(String, String), GroupDelta] = Map([])
   for n in before.nodes {
@@ -97,9 +99,11 @@ pub fn compare(
       removed: None,
       survived: None,
       changes: [],
+      excluded_ids: [],
     }
   }
   let changes : Array[ObjectChange] = []
+  let excluded_ids : Array[String] = []
   let mut added = 0
   let mut removed = 0
   let mut survived = 0
@@ -118,7 +122,11 @@ pub fn compare(
       }
       Some(i) => {
         let old = before.nodes[i]
-        guard old.kind == n.kind && old.name == n.name else {
+        if old.kind != n.kind || old.name != n.name {
+          if exclude_conflicts {
+            excluded_ids.push(n.id)
+            continue
+          }
           raise Identity(
             "overlapping id \{n.id} changed type/name; identity comparison rejected",
           )
@@ -157,5 +165,6 @@ pub fn compare(
     removed: Some(removed),
     survived: Some(survived),
     changes,
+    excluded_ids,
   }
 }

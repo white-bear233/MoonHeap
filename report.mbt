@@ -85,12 +85,16 @@ pub fn Inspector::report(
     opts["change_offset"] = @json.to_json(cursor)
     let options = @json.to_json(opts).stringify()
     let raw_page = if view == "diff" {
-      self.diff(handle, int_option(req, "after_handle", handle), options)
+      self.diff(
+        handle,
+        integer(field(req, "after_handle"), "after_handle"),
+        options,
+      )
     } else if view == "investigate" {
       self.investigate(
         handle,
-        int_option(req, "growth_handle", handle),
-        int_option(req, "cleanup_handle", handle),
+        integer(field(req, "growth_handle"), "growth_handle"),
+        integer(field(req, "cleanup_handle"), "cleanup_handle"),
         options,
       )
     } else {
@@ -191,13 +195,13 @@ fn report_columns(view : String) -> Array[String] {
       [
         "record_type", "kind", "name", "id", "status", "before_count", "after_count",
         "count_delta", "before_bytes", "after_bytes", "bytes_delta", "before_retained_bytes",
-        "after_retained_bytes", "retained_delta",
+        "after_retained_bytes", "retained_delta", "excluded_id_count", "excluded_ids_sample",
       ]
     "investigate" =>
       [
         "record_type", "kind", "name", "id", "before_count", "growth_count", "cleanup_count",
         "remaining_count", "before_bytes", "growth_bytes", "cleanup_bytes", "remaining_bytes",
-        "shallow_bytes", "retained_bytes", "distance",
+        "shallow_bytes", "retained_bytes", "distance", "excluded_id_count", "excluded_ids_sample",
       ]
     "cycles" => ["cycle_id", "count", "shallow_bytes", "sample"]
     _ =>
@@ -229,6 +233,14 @@ pub fn Inspector::export_report(
   let columns = report_columns(view)
   let data = field(report, "data")
   let records : Array[Json] = []
+  if int_option(data, "excluded_id_count", 0) > 0 {
+    records.push({
+      "record_type": "identity_exclusions",
+      "name": "Ambiguous IDs excluded from identity counts and candidates; aggregate counts unchanged",
+      "excluded_id_count": field(data, "excluded_id_count"),
+      "excluded_ids_sample": field(data, "excluded_ids_sample"),
+    })
+  }
   for section in ["items", "groups", "changes"] {
     match optional(data, section) {
       Some(v) =>

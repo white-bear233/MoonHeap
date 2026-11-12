@@ -88,7 +88,7 @@
       <div id="tree-map" class="tree-map" hidden><div id="tree-breadcrumbs"></div><p class="small muted">当前页直接子树的保留体积。对象自身与其余子树分别显示，避免重复加总。</p><svg id="treemap" viewBox="0 0 1000 130" role="img" aria-label="保留体积分布"></svg></div>
       <div id="investigation-summary" class="investigation-summary" hidden></div>
       <div id="cycle-heading" class="identity" hidden><button id="back-cycles" class="text-button">← 返回循环组</button><span id="cycle-title"></span></div>
-      <div id="identity-row" class="identity" hidden><label><input type="checkbox" id="identity"> 我确认这些快照来自同一个 V8 实例，启用对象 ID 比较</label><p id="identity-result" class="small muted">默认仅比较类型、数量和浅体积；对象 ID 不能用于跨进程匹配。</p></div>
+      <div id="identity-row" class="identity" hidden><label><input type="checkbox" id="identity"> 我确认这些快照来自同一个 V8 实例，启用对象 ID 比较；冲突 ID 将排除并提示</label><p id="identity-result" class="small muted">默认仅比较类型、数量和浅体积；对象 ID 不能用于跨进程匹配。</p></div>
       <div id="empty" class="empty"><div class="empty-art" aria-hidden="true"><span>◉</span><i></i><span>◈</span><i></i><span>◉</span></div><h3>把引用关系，变成调查线索</h3><p>打开快照后，在这里查找对象、查看保留体积，<br>或者比较一次操作前后的变化。</p><button id="demo-empty" class="primary">加载缓存增长示例</button></div>
       <div id="table-wrap" class="table-wrap" hidden><table><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div>
       <div id="changes-wrap" class="changes" hidden><h3 id="changes-title">对象 ID 变化</h3><p class="small muted" id="changes-description">按保留体积变化排序，独立分页。点击对象继续追踪。</p><div class="table-wrap"><table><thead id="changes-head"></thead><tbody id="changes-body"></tbody></table></div>

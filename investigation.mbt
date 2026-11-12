@@ -30,13 +30,21 @@ pub fn Analysis::compare(
   self : Analysis,
   after : Analysis,
   same_isolate~ : Bool = false,
+  exclude_conflicts~ : Bool = false,
 ) -> RetentionDiff raise HeapError {
   let before_s = self.graph.snapshot
   let after_s = after.graph.snapshot
-  let aggregate = compare(before_s, after_s, same_isolate~)
+  let aggregate = compare(before_s, after_s, same_isolate~, exclude_conflicts~)
+  let excluded : Map[String, Bool] = Map([])
+  for id in aggregate.excluded_ids {
+    excluded[id] = true
+  }
   let changes : Array[RetentionChange] = []
   if same_isolate {
     for n in after_s.nodes {
+      if excluded.contains(n.id) {
+        continue
+      }
       let current = after.retained_bytes(n.index)
       match before_s.find_id(n.id) {
         None =>
@@ -75,6 +83,9 @@ pub fn Analysis::compare(
       }
     }
     for n in before_s.nodes {
+      if excluded.contains(n.id) {
+        continue
+      }
       if !after_s.ids.contains(n.id) {
         let previous = self.retained_bytes(n.index)
         changes.push({
@@ -124,6 +135,7 @@ pub(all) struct Investigation {
   survivors : Array[Node]
   created : Int32?
   released : Int32?
+  excluded_ids : Array[String]
 }
 
 ///|
@@ -134,14 +146,32 @@ pub fn investigate(
   growth : Analysis,
   cleanup : Analysis,
   same_isolate~ : Bool = false,
+  exclude_conflicts~ : Bool = false,
 ) -> Investigation raise HeapError {
   let first = compare(
     before.graph.snapshot,
     growth.graph.snapshot,
     same_isolate~,
+    exclude_conflicts~,
   )
-  ignore(compare(growth.graph.snapshot, cleanup.graph.snapshot, same_isolate~))
-  ignore(compare(before.graph.snapshot, cleanup.graph.snapshot, same_isolate~))
+  let second = compare(
+    growth.graph.snapshot,
+    cleanup.graph.snapshot,
+    same_isolate~,
+    exclude_conflicts~,
+  )
+  let third = compare(
+    before.graph.snapshot,
+    cleanup.graph.snapshot,
+    same_isolate~,
+    exclude_conflicts~,
+  )
+  let excluded : Map[String, Bool] = Map([])
+  for result in [first, second, third] {
+    for id in result.excluded_ids {
+      excluded[id] = true
+    }
+  }
   let groups : Map[(String, String), ResidueGroup] = Map([])
   for g in before.groups() {
     groups[(g.kind, g.name)] = {
@@ -209,6 +239,9 @@ pub fn investigate(
   let mut released = 0
   if same_isolate {
     for n in growth.graph.snapshot.nodes {
+      if excluded.contains(n.id) {
+        continue
+      }
       if !before.graph.snapshot.ids.contains(n.id) {
         match cleanup.graph.snapshot.ids.get(n.id) {
           Some(i) => survivors.push(cleanup.graph.snapshot.nodes[i])
@@ -236,11 +269,16 @@ pub fn investigate(
     },
     groups: rows,
     survivors,
-    created: first.added,
+    created: if same_isolate {
+      Some(survivors.length() + released)
+    } else {
+      None
+    },
     released: if same_isolate {
       Some(released)
     } else {
       None
     },
+    excluded_ids: excluded.keys().to_array(),
   }
 }

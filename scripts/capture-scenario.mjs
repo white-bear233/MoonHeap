@@ -1,4 +1,5 @@
 import { Session } from 'node:inspector/promises';
+import { getHeapSnapshot } from 'node:v8';
 import { mkdirSync, openSync, closeSync, writeSync, writeFileSync, existsSync, createReadStream, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -15,15 +16,23 @@ for (const name of ['before.heapsnapshot','growth.heapsnapshot','cleanup.heapsna
 // Workload logging cannot corrupt the machine-readable result on stdout.
 console.log = console.info = console.debug = (...args) => console.error(...args);
 const session = new Session(); session.connect();
-let activeFile = null;
-session.on('HeapProfiler.addHeapSnapshotChunk', message => { if (activeFile != null) writeSync(activeFile,message.params.chunk); });
 const snapshots = [];
 async function capture(label) {
   await new Promise(setImmediate); global.gc(); await new Promise(setImmediate); global.gc();
   const file = label + '.heapsnapshot', path = resolve(dir,file);
-  activeFile = openSync(path,'wx');
-  try { await session.post('HeapProfiler.takeHeapSnapshot'); }
-  finally { closeSync(activeFile); activeFile = null; }
+  const fd = openSync(path,'wx');
+  // Use V8's binary stream instead of Inspector string-chunk callbacks, which
+  // produced overlapping object identities in repeated Node 22 tracked captures.
+  try {
+    for await (const chunk of getHeapSnapshot()) {
+      let offset=0;
+      while(offset<chunk.length) {
+        const written=writeSync(fd,chunk,offset,chunk.length-offset);
+        if(written<=0)throw new Error('Unable to write snapshot');
+        offset+=written;
+      }
+    }
+  } finally { closeSync(fd); }
   const hash = createHash('sha256');
   for await (const chunk of createReadStream(path)) hash.update(chunk);
   snapshots.push({label,file,bytes:statSync(path).size,sha256:hash.digest('hex')});

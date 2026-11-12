@@ -7,13 +7,13 @@ import {
 }
 
 // Values
-pub fn compare(Snapshot, Snapshot, same_isolate? : Bool) -> SnapshotDiff raise HeapError
+pub fn compare(Snapshot, Snapshot, same_isolate? : Bool, exclude_conflicts? : Bool) -> SnapshotDiff raise HeapError
 
 pub fn decoder_with_options(String) -> Decoder raise HeapError
 
 pub fn failure(HeapError) -> String
 
-pub fn investigate(Analysis, Analysis, Analysis, same_isolate? : Bool) -> Investigation raise HeapError
+pub fn investigate(Analysis, Analysis, Analysis, same_isolate? : Bool, exclude_conflicts? : Bool) -> Investigation raise HeapError
 
 pub fn parse(String, limits? : Limits) -> Snapshot raise HeapError
 
@@ -40,7 +40,7 @@ pub(all) struct AllocationFrame {
 }
 
 type Analysis
-pub fn Analysis::compare(Self, Self, same_isolate? : Bool) -> RetentionDiff raise HeapError
+pub fn Analysis::compare(Self, Self, same_isolate? : Bool, exclude_conflicts? : Bool) -> RetentionDiff raise HeapError
 pub fn Analysis::dominated(Self, Int32, offset? : Int32, limit? : Int32) -> NodePage raise HeapError
 pub fn Analysis::dominator_chain(Self, Int32, max_depth? : Int32) -> Array[Node] raise HeapError
 pub fn Analysis::graph(Self) -> Graph
@@ -126,6 +126,7 @@ pub(all) struct Investigation {
   survivors : Array[Node]
   created : Int32?
   released : Int32?
+  excluded_ids : Array[String]
 }
 
 #derive(@debug.Debug)
@@ -223,6 +224,7 @@ pub(all) struct SnapshotDiff {
   removed : Int32?
   survived : Int32?
   changes : Array[ObjectChange]
+  excluded_ids : Array[String]
 }
 
 #derive(Eq, @debug.Debug)

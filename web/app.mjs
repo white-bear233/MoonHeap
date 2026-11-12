@@ -42,7 +42,7 @@ function settings(){const n=Number($('max-mib').value);if(!Number.isInteger(n)||
 function filters(){
   const r={query:$('search').value.trim(),kind:$('kind').value,order:$('order').value,offset,limit:PAGE};
   if(view==='nodes')r.reachability=$('reachability').value;
-  if(['diff','investigate'].includes(view))r.same_isolate=$('identity').checked;
+  if(['diff','investigate'].includes(view)){r.same_isolate=$('identity').checked;r.exclude_conflicts=true;}
   if(view==='diff'){r.group_offset=offset;r.change_offset=changeOffset;r.status=$('change-status').value;}
   if(view==='investigate')r.residual_only=!$('all-groups').checked;
   const raw=$('min-size').value;
@@ -86,8 +86,9 @@ async function load(slot,file){
 function loadFiles(slot,files){const chosen=[...files].slice(0,3-slot);return run(async()=>{for(const file of chosen)await load(slot++,file);await refresh();},'正在打开快照…');}
 async function demo(){
   await run(async()=>{
+    const started=generation;
     resetFilters();
-    for(const[i,name]of ['before','growth','residual'].entries()){const res=await fetch('examples/'+name+'.heapsnapshot');if(!res.ok)throw new Error('无法读取示例');await load(i,new File([await res.arrayBuffer()],name+'.heapsnapshot'));}
+    for(const[i,name]of ['before','growth','residual'].entries()){const res=await fetch('examples/'+name+'.heapsnapshot');if(!res.ok)throw new Error('无法读取示例');const contents=await res.arrayBuffer();if(started!==generation)throw new Error('已取消');await load(i,new File([contents],name+'.heapsnapshot'));}
     active=1;view='diff';await refresh();
     $('notice').textContent='合成示例：缓存从 2 项增长到 18 项，清理后仍剩 4 项。切换“清理后调查”查看残留。';
   },'正在加载三阶段缓存示例…');
@@ -168,6 +169,7 @@ function renderChanges(data){
   if(investigating){$('investigation-summary').hidden=false;$('investigation-summary').replaceChildren(element('strong',identity?number(data.total)+' 个匹配的存活候选':'聚合调查'),element('span','　这些结果是持有关系的调查线索，正常缓存与运行时活动也可能存活。'));}
   if(!identity)return;
   $('changes-title').textContent=investigating?'新增后仍存活的对象':'对象 ID 与保留体积变化';
+  if(data.excluded_id_count>0)$('identity-result').textContent+=' ⚠ '+number(data.excluded_id_count)+' 个 ID 的类型或名称矛盾，已从身份计数及候选中排除；聚合统计仍包含这些对象。';
   $('changes-description').textContent=investigating?'候选对象在 A 中不存在、在 B 中出现、在 C 中仍存在。点击后检查清理快照中的引用；来源可回查 B。':'按保留体积增量排序。此表独立分页；“不可达”与“对象不存在”含义不同。';
   tableHead('changes-head',investigating?['对象 / ID','类型','清理后浅体积','清理后保留体积']:['对象 / ID','变化','之前浅体积','之后浅体积','保留体积变化']);
   $('changes-body').replaceChildren();
@@ -259,7 +261,7 @@ async function saveWorkspace(){
   await database('put',state);$('notice').textContent='工作区已保存到当前浏览器，包含原始快照、筛选和书签。';
 }
 async function restoreWorkspace(){
-  const saved=await database('get');if(!saved||saved.version!==2)throw new Error('没有可恢复的工作区');
+  const started=generation,saved=await database('get');if(started!==generation)throw new Error('已取消');if(!saved||saved.version!==2)throw new Error('没有可恢复的工作区');
   resetFilters();$('max-mib').value=saved.max_mib??256;
   for(let i=0;i<3;i++){if(saved.slots[i])await load(i,new File([saved.slots[i].file],saved.slots[i].name));else{await rpc('close',{slot:i});slots[i]=null;}}
   active=saved.active;view=saved.view;treeRoot=saved.treeRoot??null;cycleId=saved.cycleId??null;$('all-groups').checked=!!saved.all_groups;$('identity').checked=!!saved.identity;bookmarks=saved.bookmarks??[];
@@ -280,8 +282,8 @@ for(const slot of document.querySelectorAll('.slot')){
   slot.ondragover=e=>{e.preventDefault();if(!busy)slot.classList.add('dragging');};slot.ondragleave=()=>slot.classList.remove('dragging');
   slot.ondrop=e=>{e.preventDefault();slot.classList.remove('dragging');loadFiles(Number(slot.id.slice(-1)),e.dataTransfer.files);};
 }
-for(const b of document.querySelectorAll('.snapshot-name'))b.onclick=()=>run(async()=>{active=Number(b.dataset.slot);treeRoot=null;offset=0;await refresh();});
-for(const b of document.querySelectorAll('.close-slot'))b.onclick=()=>run(async()=>{const i=Number(b.dataset.slot);await rpc('close',{slot:i});slots[i]=null;bookmarks=bookmarks.filter(b=>b.slot!==i);history=[];historyAt=-1;$('identity').checked=false;active=Math.max(0,slots.findIndex(Boolean));offset=changeOffset=0;renderBookmarks();await refresh();});
+for(const b of document.querySelectorAll('.snapshot-name'))b.onclick=()=>run(async()=>{active=Number(b.dataset.slot);treeRoot=null;if(view==='cycle')view='cycles';offset=0;await refresh();});
+for(const b of document.querySelectorAll('.close-slot'))b.onclick=()=>run(async()=>{const i=Number(b.dataset.slot);await rpc('close',{slot:i});slots[i]=null;bookmarks=bookmarks.filter(b=>b.slot!==i);history=[];historyAt=-1;$('identity').checked=false;active=Math.max(0,slots.findIndex(Boolean));treeRoot=null;if(view==='cycle')view='cycles';offset=changeOffset=0;renderBookmarks();await refresh();});
 for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>run(async()=>{view=b.dataset.view;offset=changeOffset=0;await refresh();});
 for(const b of document.querySelectorAll('[data-detail]'))b.onclick=()=>run(async()=>{detailView=b.dataset.detail;detailOffset=0;await renderDetail();});
 $('search-form').onsubmit=e=>{e.preventDefault();run(async()=>{offset=changeOffset=0;await refresh();});};

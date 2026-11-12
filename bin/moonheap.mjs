@@ -29,6 +29,7 @@ Options:
   --max-depth N --max-paths N   bounded path enumeration
   --cycle-id N                 inspect a cycle group's members
   --same-isolate                caller assertion for object identity
+  --exclude-conflicts           exclude ambiguous IDs and report their count
   --manifest capture.json      verify capture file hashes and common capture provenance
   --max-mib N                  per-file budget, 1..1024 (default 256 MiB)
   --max-work N                 analysis/search work budget
@@ -55,7 +56,7 @@ try {
     const numbers = {'--limit':'limit','--offset':'offset','--max-depth':'max_depth','--max-paths':'max_paths',
       '--cycle-id':'cycle_id','--group-offset':'group_offset','--change-offset':'change_offset','--min-growth':'min_growth',
       '--min-retained':'min_retained','--min-shallow':'min_shallow','--max-mib':'max_mib','--max-work':'max_work','--max-rows':'max_rows','--iterations':'iterations','--timeout':'timeout'};
-    const booleans = {'--same-isolate':['same_isolate',true],'--outgoing':['incoming',false],'--retaining-only':['retaining_only',true],
+    const booleans = {'--same-isolate':['same_isolate',true],'--exclude-conflicts':['exclude_conflicts',true],'--outgoing':['incoming',false],'--retaining-only':['retaining_only',true],
       '--all-groups':['residual_only',false],'--force':['force',true],'--allocation-traces':['allocation_traces',true]};
     for (let i=0;i<args.length;i++) {
       const arg=args[i]; if (!arg.startsWith('--')) { files.push(arg); continue; }

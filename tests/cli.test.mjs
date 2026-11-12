@@ -27,6 +27,13 @@ test('CLI reports graph retention, precise IDs and all navigation operations', (
   assert.equal(path.reachable, true);
   assert.deepEqual(path.edges.map(e => e.target.name), ['A', 'shared']);
   assert.equal(cli('dominated', fixture, '--id', '1').data.total, 3);
+  assert.equal(cli('tree',fixture).data.children.total,3);
+  assert.equal(cli('paths',fixture,'--id','7').data.paths.length,2);
+  assert.equal(cli('source',fixture,'--id','7').data.available,false);
+  assert.equal(cli('cycles',fixture).data.total,0);
+  assert.equal(cli('cycle',fixture,'--cycle-id','0').status,2);
+  assert.equal(cli('nodes',fixture,'--min-shallow','20').data.total,2);
+  assert.equal(cli('nodes',fixture,'--reachability','unreachable').data.total,0);
   assert.equal(cli('nodes', fixture, '--query', 'shared').data.total, 1);
   assert.equal(cli('groups', fixture, '--query', 'shared').data.items[0].shallow_bytes, 30);
   assert.equal(cli('diff', fixture, fixture).data.mode, 'aggregate');

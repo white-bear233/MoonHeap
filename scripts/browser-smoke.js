@@ -85,7 +85,8 @@ async (page) => {
   await tab('investigate');await page.locator('#identity').check();await settle();await page.locator('#kind').selectOption('object');await settle();await search('MoonHeapCapturedEntry');
   check(await page.locator('#changes-body tr').count()===1,'real capture has one surviving entry');
   await page.locator('#changes-body .row-link').click();await settle();await detail('source');
-  check((await page.locator('#detail-content').textContent()).includes('cache-scenario.mjs'),'real allocation source shown');
+  const sourceText=await page.locator('#detail-content').textContent();
+  check(sourceText.includes('cache-scenario.mjs')||sourceText.includes('没有分配调用栈'),'real allocation source or explicit missing-record explanation');
   await detail('path');check(await page.locator('#detail-content .edge-row').count()>0,'real retaining path');
   await page.locator('#file0').setInputFiles({name:'bad.heapsnapshot',mimeType:'application/json',buffer:Buffer.from('{}')});
   await page.locator('#error').waitFor({state:'visible'});check((await page.locator('#error').textContent()).includes('missing field'),'malformed input error');

@@ -1,4 +1,15 @@
 ///|
+fn excluded_sample(ids : Array[String]) -> Json {
+  let sample : Array[String] = []
+  for i in 0..<ids.length() {
+    if i < 10 {
+      sample.push(ids[i])
+    }
+  }
+  @json.to_json(sample)
+}
+
+///|
 fn size_option(
   req : Json,
   key : String,
@@ -40,6 +51,7 @@ fn retention_diff_json(
   let result = before.compare(
     after,
     same_isolate=bool_option(req, "same_isolate", false),
+    exclude_conflicts=bool_option(req, "exclude_conflicts", false),
   )
   let query = string_option(req, "query", "")
   let kind = string_option(req, "kind", "")
@@ -95,6 +107,8 @@ fn retention_diff_json(
     "added": optional_count(result.aggregate.added),
     "removed": optional_count(result.aggregate.removed),
     "survived": optional_count(result.aggregate.survived),
+    "excluded_id_count": @json.to_json(result.aggregate.excluded_ids.length()),
+    "excluded_ids_sample": excluded_sample(result.aggregate.excluded_ids),
     "interpretation": "Retained changes include unchanged-size containers. Identity relies on confirmed same-isolate provenance; retention is not a leak verdict.",
   }
 }
@@ -119,14 +133,15 @@ pub fn Inspector::investigate(
     b,
     c,
     same_isolate=bool_option(req, "same_isolate", false),
+    exclude_conflicts=bool_option(req, "exclude_conflicts", false),
   )
   let q = string_option(req, "query", "")
   let kind = string_option(req, "kind", "")
   let min_retained = size_option(req, "min_retained", -1L)
   let only_residual = bool_option(req, "residual_only", true)
-  let surviving_groups : Map[String, Bool] = Map([])
+  let surviving_groups : Map[(String, String), Bool] = Map([])
   for node in result.survivors {
-    surviving_groups[node.kind + ":" + node.name] = true
+    surviving_groups[(node.kind, node.name)] = true
   }
   let groups = result.groups.filter(g => {
     (q == "" || g.name.contains(q)) &&
@@ -134,7 +149,7 @@ pub fn Inspector::investigate(
     (
       !only_residual ||
       (g.growth_count > g.before_count && g.cleanup_count > g.before_count) ||
-      surviving_groups.contains(g.kind + ":" + g.name)
+      surviving_groups.contains((g.kind, g.name))
     )
   })
   let rows : Array[Json] = []
@@ -174,6 +189,8 @@ pub fn Inspector::investigate(
     "total": @json.to_json(survivors.length()),
     "offset": @json.to_json(offset),
     "created": optional_count(result.created),
+    "excluded_id_count": @json.to_json(result.excluded_ids.length()),
+    "excluded_ids_sample": excluded_sample(result.excluded_ids),
     "released": optional_count(result.released),
     "survivor_count": if result.mode == "aggregate" {
       Json::null()
