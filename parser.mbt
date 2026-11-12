@@ -252,5 +252,6 @@ fn parse_parts(
       })
     }
   }
-  { nodes, edges, ids, root, total_size: total, limits, }
+  let source = parse_sources(metadata, meta, nf, raw_nodes, strings, count)
+  { nodes, edges, ids, root, total_size: total, limits, source, }
 }

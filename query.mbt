@@ -166,15 +166,24 @@ pub fn Analysis::dominated(
 ) -> NodePage raise HeapError {
   page_bounds(offset, limit)
   ignore(self.graph.snapshot.node(node))
+  let children : Array[Node] = []
+  for p in self.dominated_offsets[node]..<self.dominated_offsets[node + 1] {
+    children.push(self.graph.snapshot.nodes[self.dominated_nodes[p]])
+  }
+  children.sort_by((a, b) => {
+    if self.retained[a.index] > self.retained[b.index] {
+      -1
+    } else if self.retained[a.index] < self.retained[b.index] {
+      1
+    } else {
+      a.index - b.index
+    }
+  })
   let items : Array[Node] = []
-  let mut total = 0
-  for n in self.graph.snapshot.nodes {
-    if n.index != node && self.idom[n.index] == node {
-      if total >= offset && items.length() < limit {
-        items.push(n)
-      }
-      total += 1
+  for i in 0..<children.length() {
+    if i >= offset && items.length() < limit {
+      items.push(children[i])
     }
   }
-  { items, total, offset, }
+  { items, total: children.length(), offset, }
 }

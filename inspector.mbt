@@ -2,11 +2,16 @@
 struct Inspector {
   sessions : Map[Int32, Analysis]
   mut next_id : Int32
+  capacity : Int32
 }
 
 ///|
-pub fn Inspector::new() -> Inspector {
-  { sessions: Map([]), next_id: 1, }
+pub fn Inspector::new(max_snapshots~ : Int32 = 2) -> Inspector {
+  {
+    sessions: Map([]),
+    next_id: 1,
+    capacity: max_snapshots.clamp(min=1, max=8),
+  }
 }
 
 ///|
@@ -15,13 +20,21 @@ pub fn Inspector::open(
   input : String,
   limits~ : Limits = Limits::default(),
 ) -> Int32 raise HeapError {
-  guard self.sessions.length() < 2 else {
-    raise Limit("close a snapshot before loading more than two")
+  self.accept(parse(input, limits~))
+}
+
+///|
+pub fn Inspector::accept(
+  self : Inspector,
+  snapshot : Snapshot,
+) -> Int32 raise HeapError {
+  guard self.sessions.length() < self.capacity else {
+    raise Limit("snapshot session capacity exceeded")
   }
   guard self.next_id < 2147483647 else {
     raise Limit("inspector handle range exhausted")
   }
-  let a = parse(input, limits~).graph().analyze()
+  let a = snapshot.graph().analyze()
   let id = self.next_id
   self.next_id += 1
   self.sessions[id] = a
@@ -165,6 +178,9 @@ fn node_json(a : Analysis, n : Node) -> Json {
       },
     ),
     "dominator_id": parent,
+    "dominated_count": @json.to_json(
+      a.dominated_offsets[n.index + 1] - a.dominated_offsets[n.index],
+    ),
   }
 }
 
@@ -280,7 +296,7 @@ pub fn Inspector::query(
         },
       }
     }
-    _ => raise Invalid("unknown operation: \{op}")
+    _ => advanced_query(a, req, op, offset, limit)
   }
 }
 

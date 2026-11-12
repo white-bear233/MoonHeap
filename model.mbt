@@ -76,6 +76,7 @@ struct Snapshot {
   root : Int32
   total_size : Int64
   limits : Limits
+  source : SourceIndex
 }
 
 ///|

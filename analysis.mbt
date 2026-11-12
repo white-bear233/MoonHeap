@@ -5,6 +5,8 @@ struct Analysis {
   retained : Array[Int64]
   reachable_count : Int32
   iterations : Int32
+  dominated_offsets : Array[Int32]
+  dominated_nodes : Array[Int32]
 }
 
 ///|
@@ -107,7 +109,32 @@ pub fn Graph::analyze(self : Graph) -> Analysis raise HeapError {
       retained[idom[v]] += retained[v]
     }
   }
-  { graph: self, idom, retained, reachable_count: order.length(), iterations, }
+  let dominated_offsets = Array::make(n + 1, 0)
+  for v in order {
+    if v != root {
+      dominated_offsets[idom[v] + 1] += 1
+    }
+  }
+  for i in 1..<(n + 1) {
+    dominated_offsets[i] += dominated_offsets[i - 1]
+  }
+  let positions = dominated_offsets.copy()
+  let dominated_nodes = Array::make(order.length() - 1, 0)
+  for v in order {
+    if v != root {
+      dominated_nodes[positions[idom[v]]] = v
+      positions[idom[v]] += 1
+    }
+  }
+  {
+    graph: self,
+    idom,
+    retained,
+    reachable_count: order.length(),
+    iterations,
+    dominated_offsets,
+    dominated_nodes,
+  }
 }
 
 ///|

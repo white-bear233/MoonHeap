@@ -26,8 +26,18 @@ pub(all) suberror HeapError {
 pub fn HeapError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
+pub(all) struct AllocationFrame {
+  function_id : String
+  name : String
+  script_name : String
+  script_id : Int32
+  line : Int32
+  column : Int32
+}
+
 type Analysis
 pub fn Analysis::dominated(Self, Int32, offset? : Int32, limit? : Int32) -> NodePage raise HeapError
+pub fn Analysis::dominator_chain(Self, Int32, max_depth? : Int32) -> Array[Node] raise HeapError
 pub fn Analysis::graph(Self) -> Graph
 pub fn Analysis::groups(Self) -> Array[Group]
 pub fn Analysis::immediate_dominator(Self, Int32) -> Int32? raise HeapError
@@ -35,6 +45,12 @@ pub fn Analysis::iterations(Self) -> Int32
 pub fn Analysis::nodes(Self, order? : String, query? : String, kind? : String, offset? : Int32, limit? : Int32) -> NodePage raise HeapError
 pub fn Analysis::reachable_count(Self) -> Int32
 pub fn Analysis::retained_bytes(Self, Int32) -> Int64? raise HeapError
+
+pub(all) struct CycleGroup {
+  id : Int32
+  members : Array[Int32]
+  shallow_bytes : Int64
+}
 
 type Decoder
 pub fn Decoder::characters_read(Self) -> Int32
@@ -62,10 +78,12 @@ pub(all) struct EdgePage {
 
 type Graph
 pub fn Graph::analyze(Self) -> Analysis raise HeapError
+pub fn Graph::cycles(Self) -> Array[CycleGroup]
 pub fn Graph::is_retaining(Self, Int32) -> Bool raise HeapError
 pub fn Graph::references(Self, Int32, incoming? : Bool, retaining_only? : Bool, offset? : Int32, limit? : Int32) -> EdgePage raise HeapError
 pub fn Graph::root_distance(Self, Int32) -> Int32? raise HeapError
 pub fn Graph::root_path(Self, Int32, max_depth? : Int32) -> Array[Edge]? raise HeapError
+pub fn Graph::root_paths(Self, Int32, max_paths? : Int32, max_depth? : Int32, max_work? : Int32) -> PathSearch raise HeapError
 pub fn Graph::snapshot(Self) -> Snapshot
 pub fn Graph::weakmap_edge_count(Self) -> Int32
 
@@ -87,9 +105,10 @@ pub(all) struct GroupDelta {
 }
 
 type Inspector
+pub fn Inspector::accept(Self, Snapshot) -> Int32 raise HeapError
 pub fn Inspector::close(Self, Int32) -> Unit
 pub fn Inspector::diff(Self, Int32, Int32, String) -> @json.Json raise HeapError
-pub fn Inspector::new() -> Self
+pub fn Inspector::new(max_snapshots? : Int32) -> Self
 pub fn Inspector::open(Self, String, limits? : Limits) -> Int32 raise HeapError
 pub fn Inspector::query(Self, Int32, String) -> @json.Json raise HeapError
 
@@ -133,7 +152,16 @@ pub(all) struct ObjectChange {
   after_bytes : Int64?
 }
 
+pub(all) struct PathSearch {
+  paths : Array[Array[Edge]]
+  complete : Bool
+  examined : Int32
+  stop_reason : String
+}
+
 type Snapshot
+pub fn Snapshot::allocation_stack(Self, Int32) -> Array[AllocationFrame] raise HeapError
+pub fn Snapshot::allocation_totals(Self, Int32) -> (Int64, Int64)? raise HeapError
 pub fn Snapshot::edge(Self, Int32) -> Edge raise HeapError
 pub fn Snapshot::edge_count(Self) -> Int32
 pub fn Snapshot::find_id(Self, String) -> Int32?
@@ -141,6 +169,7 @@ pub fn Snapshot::graph(Self) -> Graph
 pub fn Snapshot::node(Self, Int32) -> Node raise HeapError
 pub fn Snapshot::node_count(Self) -> Int32
 pub fn Snapshot::root_index(Self) -> Int32
+pub fn Snapshot::source_location(Self, Int32) -> SourceLocation? raise HeapError
 pub fn Snapshot::total_shallow_bytes(Self) -> Int64
 
 pub(all) struct SnapshotDiff {
@@ -151,6 +180,16 @@ pub(all) struct SnapshotDiff {
   survived : Int32?
   changes : Array[ObjectChange]
 }
+
+#derive(Eq, @debug.Debug)
+pub(all) struct SourceLocation {
+  script_id : Int32
+  line : Int32
+  column : Int32
+}
+pub fn SourceLocation::equal(Self, Self) -> Bool
+pub fn SourceLocation::not_equal(Self, Self) -> Bool
+pub fn SourceLocation::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

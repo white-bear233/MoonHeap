@@ -34,7 +34,15 @@ fn graph_fixture(n : Int32, links : Array[(Int32, Int32, String)]) -> Snapshot {
       edge_count: edges.length() - start,
     })
   }
-  { nodes, edges, ids, root: 0, total_size: total, limits: Limits::default(), }
+  {
+    nodes,
+    edges,
+    ids,
+    root: 0,
+    total_size: total,
+    limits: Limits::default(),
+    source: empty_sources(n),
+  }
 }
 
 ///|
