@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub fn compare(Snapshot, Snapshot, same_isolate? : Bool) -> SnapshotDiff raise HeapError
+
 pub fn parse(String, limits? : Limits) -> Snapshot raise HeapError
 
 // Errors
@@ -78,6 +80,15 @@ pub(all) struct Group {
   max_retained_bytes : Int64?
 }
 
+pub(all) struct GroupDelta {
+  kind : String
+  name : String
+  before_count : Int32
+  after_count : Int32
+  before_bytes : Int64
+  after_bytes : Int64
+}
+
 #derive(@debug.Debug)
 pub(all) struct Limits {
   max_chars : Int32
@@ -109,6 +120,15 @@ pub(all) struct NodePage {
   offset : Int32
 }
 
+pub(all) struct ObjectChange {
+  id : String
+  kind : String
+  name : String
+  status : String
+  before_bytes : Int64?
+  after_bytes : Int64?
+}
+
 pub struct Snapshot {
   nodes : Array[Node]
   edges : Array[Edge]
@@ -125,6 +145,15 @@ pub fn Snapshot::node(Self, Int32) -> Node raise HeapError
 pub fn Snapshot::node_count(Self) -> Int32
 pub fn Snapshot::root_index(Self) -> Int32
 pub fn Snapshot::total_shallow_bytes(Self) -> Int64
+
+pub(all) struct SnapshotDiff {
+  mode : String
+  groups : Array[GroupDelta]
+  added : Int32?
+  removed : Int32?
+  survived : Int32?
+  changes : Array[ObjectChange]
+}
 
 // Type aliases
 
