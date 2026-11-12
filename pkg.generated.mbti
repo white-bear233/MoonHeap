@@ -19,6 +19,19 @@ pub(all) suberror HeapError {
 pub fn HeapError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
+pub struct Analysis {
+  graph : Graph
+  idom : Array[Int32]
+  retained : Array[Int64]
+  reachable_count : Int32
+  iterations : Int32
+}
+pub fn Analysis::graph(Self) -> Graph
+pub fn Analysis::immediate_dominator(Self, Int32) -> Int32? raise HeapError
+pub fn Analysis::iterations(Self) -> Int32
+pub fn Analysis::reachable_count(Self) -> Int32
+pub fn Analysis::retained_bytes(Self, Int32) -> Int64? raise HeapError
+
 #derive(Eq, @debug.Debug)
 pub(all) struct Edge {
   index : Int32
@@ -40,6 +53,7 @@ pub struct Graph {
   parent_edge : Array[Int32]
   conditional_edges : Int32
 }
+pub fn Graph::analyze(Self) -> Analysis raise HeapError
 pub fn Graph::is_retaining(Self, Int32) -> Bool raise HeapError
 pub fn Graph::root_distance(Self, Int32) -> Int32? raise HeapError
 pub fn Graph::root_path(Self, Int32, max_depth? : Int32) -> Array[Edge]? raise HeapError
