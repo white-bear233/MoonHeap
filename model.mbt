@@ -38,10 +38,10 @@ pub(all) struct Limits {
 ///|
 pub fn Limits::default() -> Limits {
   {
-    max_chars: 67108864,
-    max_nodes: 1000000,
-    max_edges: 8000000,
-    max_strings: 2000000,
+    max_chars: 268435456,
+    max_nodes: 2000000,
+    max_edges: 16000000,
+    max_strings: 4000000,
     max_work: 200000000,
   }
 }

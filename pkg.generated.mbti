@@ -9,7 +9,11 @@ import {
 // Values
 pub fn compare(Snapshot, Snapshot, same_isolate? : Bool) -> SnapshotDiff raise HeapError
 
+pub fn decoder_with_options(String) -> Decoder raise HeapError
+
 pub fn failure(HeapError) -> String
+
+pub fn investigate(Analysis, Analysis, Analysis, same_isolate? : Bool) -> Investigation raise HeapError
 
 pub fn parse(String, limits? : Limits) -> Snapshot raise HeapError
 
@@ -36,6 +40,7 @@ pub(all) struct AllocationFrame {
 }
 
 type Analysis
+pub fn Analysis::compare(Self, Self, same_isolate? : Bool) -> RetentionDiff raise HeapError
 pub fn Analysis::dominated(Self, Int32, offset? : Int32, limit? : Int32) -> NodePage raise HeapError
 pub fn Analysis::dominator_chain(Self, Int32, max_depth? : Int32) -> Array[Node] raise HeapError
 pub fn Analysis::graph(Self) -> Graph
@@ -108,9 +113,18 @@ type Inspector
 pub fn Inspector::accept(Self, Snapshot) -> Int32 raise HeapError
 pub fn Inspector::close(Self, Int32) -> Unit
 pub fn Inspector::diff(Self, Int32, Int32, String) -> @json.Json raise HeapError
+pub fn Inspector::investigate(Self, Int32, Int32, Int32, String) -> @json.Json raise HeapError
 pub fn Inspector::new(max_snapshots? : Int32) -> Self
 pub fn Inspector::open(Self, String, limits? : Limits) -> Int32 raise HeapError
 pub fn Inspector::query(Self, Int32, String) -> @json.Json raise HeapError
+
+pub(all) struct Investigation {
+  mode : String
+  groups : Array[ResidueGroup]
+  survivors : Array[Node]
+  created : Int32?
+  released : Int32?
+}
 
 #derive(@debug.Debug)
 pub(all) struct Limits {
@@ -157,6 +171,34 @@ pub(all) struct PathSearch {
   complete : Bool
   examined : Int32
   stop_reason : String
+}
+
+pub(all) struct ResidueGroup {
+  kind : String
+  name : String
+  before_count : Int32
+  growth_count : Int32
+  cleanup_count : Int32
+  before_bytes : Int64
+  growth_bytes : Int64
+  cleanup_bytes : Int64
+}
+
+pub(all) struct RetentionChange {
+  id : String
+  kind : String
+  name : String
+  status : String
+  before_bytes : Int64?
+  after_bytes : Int64?
+  before_retained : Int64?
+  after_retained : Int64?
+  retained_delta : Int64?
+}
+
+pub(all) struct RetentionDiff {
+  aggregate : SnapshotDiff
+  changes : Array[RetentionChange]
 }
 
 type Snapshot

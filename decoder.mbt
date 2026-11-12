@@ -314,3 +314,20 @@ pub fn Decoder::finish(self : Decoder) -> Snapshot raise HeapError {
 pub fn Decoder::characters_read(self : Decoder) -> Int32 {
   self.chars
 }
+
+///|
+/// Configure an incremental reader using the shared versioned request validator.
+pub fn decoder_with_options(input : String) -> Decoder raise HeapError {
+  let req = request(input)
+  let mib = int_option(req, "max_mib", 256)
+  guard mib >= 1 && mib <= 1024 else {
+    raise Invalid("max_mib must be in 1..1024")
+  }
+  Decoder::new(limits={
+    max_chars: mib * 1048576,
+    max_nodes: int_option(req, "max_nodes", 2000000),
+    max_edges: int_option(req, "max_edges", 16000000),
+    max_strings: int_option(req, "max_strings", 4000000),
+    max_work: int_option(req, "max_work", 200000000),
+  })
+}

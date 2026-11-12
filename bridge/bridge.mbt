@@ -1,5 +1,5 @@
 ///|
-let inspector : @heap.Inspector = @heap.Inspector::new()
+let inspector : @heap.Inspector = @heap.Inspector::new(max_snapshots=3)
 
 ///|
 #export_name("load_snapshot")

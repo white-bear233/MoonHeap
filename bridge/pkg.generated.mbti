@@ -2,9 +2,19 @@
 package "white-bear233/moonheap/bridge"
 
 // Values
+pub fn abort_snapshot(Int32) -> Unit
+
+pub fn begin_snapshot(String) -> String
+
 pub fn close_snapshot(Int32) -> Unit
 
 pub fn diff_snapshots(Int32, Int32, String) -> String
+
+pub fn feed_snapshot(Int32, String) -> String
+
+pub fn finish_snapshot(Int32) -> String
+
+pub fn investigate_snapshots(Int32, Int32, Int32, String) -> String
 
 pub fn load_snapshot(String) -> String
 

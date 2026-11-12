@@ -307,62 +307,7 @@ pub fn Inspector::diff(
   after : Int32,
   input : String,
 ) -> Json raise HeapError {
-  let req = request(input)
-  let offset = int_option(req, "offset", 0)
-  let limit = int_option(req, "limit", 100)
-  page_bounds(offset, limit)
-  let result = compare(
-    self.get(before).graph.snapshot,
-    self.get(after).graph.snapshot,
-    same_isolate=bool_option(req, "same_isolate", false),
-  )
-  let query = string_option(req, "query", "")
-  let rows = result.groups.filter(g => query == "" || g.name.contains(query))
-  let groups : Array[Json] = []
-  for i in 0..<rows.length() {
-    if i >= offset && groups.length() < limit {
-      let g = rows[i]
-      groups.push({
-        "kind": @json.to_json(g.kind),
-        "name": @json.to_json(g.name),
-        "before_count": @json.to_json(g.before_count),
-        "after_count": @json.to_json(g.after_count),
-        "count_delta": @json.to_json(g.after_count - g.before_count),
-        "before_bytes": bytes_json(g.before_bytes),
-        "after_bytes": bytes_json(g.after_bytes),
-        "bytes_delta": bytes_json(g.after_bytes - g.before_bytes),
-      })
-    }
-  }
-  let changes : Array[Json] = []
-  let filtered = result.changes.filter(c => {
-    query == "" || c.name.contains(query)
-  })
-  for i in 0..<filtered.length() {
-    if i >= offset && changes.length() < limit {
-      let c = filtered[i]
-      changes.push({
-        "id": @json.to_json(c.id),
-        "name": @json.to_json(c.name),
-        "kind": @json.to_json(c.kind),
-        "status": @json.to_json(c.status),
-        "before_bytes": optional_bytes(c.before_bytes),
-        "after_bytes": optional_bytes(c.after_bytes),
-      })
-    }
-  }
-  {
-    "mode": @json.to_json(result.mode),
-    "groups": @json.to_json(groups),
-    "total_groups": @json.to_json(rows.length()),
-    "added": optional_count(result.added),
-    "removed": optional_count(result.removed),
-    "survived": optional_count(result.survived),
-    "changes": @json.to_json(changes),
-    "total_changes": @json.to_json(filtered.length()),
-    "offset": @json.to_json(offset),
-    "interpretation": "Growth is not proof of a leak. Identity mode relies on caller-confirmed same-isolate provenance.",
-  }
+  retention_diff_json(self.get(before), self.get(after), request(input))
 }
 
 ///|
