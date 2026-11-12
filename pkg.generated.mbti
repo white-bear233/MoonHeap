@@ -26,9 +26,12 @@ pub struct Analysis {
   reachable_count : Int32
   iterations : Int32
 }
+pub fn Analysis::dominated(Self, Int32, offset? : Int32, limit? : Int32) -> NodePage raise HeapError
 pub fn Analysis::graph(Self) -> Graph
+pub fn Analysis::groups(Self) -> Array[Group]
 pub fn Analysis::immediate_dominator(Self, Int32) -> Int32? raise HeapError
 pub fn Analysis::iterations(Self) -> Int32
+pub fn Analysis::nodes(Self, order? : String, query? : String, kind? : String, offset? : Int32, limit? : Int32) -> NodePage raise HeapError
 pub fn Analysis::reachable_count(Self) -> Int32
 pub fn Analysis::retained_bytes(Self, Int32) -> Int64? raise HeapError
 
@@ -44,6 +47,12 @@ pub fn Edge::equal(Self, Self) -> Bool
 pub fn Edge::not_equal(Self, Self) -> Bool
 pub fn Edge::to_repr(Self) -> @debug.Repr
 
+pub(all) struct EdgePage {
+  items : Array[Edge]
+  total : Int32
+  offset : Int32
+}
+
 pub struct Graph {
   snapshot : Snapshot
   incoming_offsets : Array[Int32]
@@ -55,10 +64,19 @@ pub struct Graph {
 }
 pub fn Graph::analyze(Self) -> Analysis raise HeapError
 pub fn Graph::is_retaining(Self, Int32) -> Bool raise HeapError
+pub fn Graph::references(Self, Int32, incoming? : Bool, retaining_only? : Bool, offset? : Int32, limit? : Int32) -> EdgePage raise HeapError
 pub fn Graph::root_distance(Self, Int32) -> Int32? raise HeapError
 pub fn Graph::root_path(Self, Int32, max_depth? : Int32) -> Array[Edge]? raise HeapError
 pub fn Graph::snapshot(Self) -> Snapshot
 pub fn Graph::weakmap_edge_count(Self) -> Int32
+
+pub(all) struct Group {
+  kind : String
+  name : String
+  count : Int32
+  shallow_bytes : Int64
+  max_retained_bytes : Int64?
+}
 
 #derive(@debug.Debug)
 pub(all) struct Limits {
@@ -84,6 +102,12 @@ pub(all) struct Node {
 pub fn Node::equal(Self, Self) -> Bool
 pub fn Node::not_equal(Self, Self) -> Bool
 pub fn Node::to_repr(Self) -> @debug.Repr
+
+pub(all) struct NodePage {
+  items : Array[Node]
+  total : Int32
+  offset : Int32
+}
 
 pub struct Snapshot {
   nodes : Array[Node]
