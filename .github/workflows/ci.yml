@@ -48,4 +48,11 @@ jobs:
           git diff --exit-code -- examples
       - name: Scaling smoke check
         run: node scripts/benchmark.mjs
+      - name: Browser interactions and cancellation
+        if: matrix.node == 24
+        run: |
+          node scripts/serve.mjs > work/serve.log 2>&1 &
+          npx --yes --package @playwright/cli@0.1.24 playwright-cli -s=ci open http://127.0.0.1:4173
+          npx --yes --package @playwright/cli@0.1.24 playwright-cli -s=ci run-code --filename scripts/browser-smoke.js
+          npx --yes --package @playwright/cli@0.1.24 playwright-cli -s=ci close
 

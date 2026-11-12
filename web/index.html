@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="MoonHeap：在本地追踪 V8 堆快照里的对象、引用与内存增长。">
+  <title>MoonHeap · 内存去向，一目了然</title>
+  <link rel="icon" href="data:,"><link rel="stylesheet" href="style.css">
+  <script type="module" src="app.mjs"></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="./"><span class="logo" aria-hidden="true">◒</span> MoonHeap <span class="version">0.1</span></a>
+  <span class="tagline">让每一份内存，都有迹可循</span>
+  <span class="local"><span class="dot"></span> 本地分析 · 文件不上传</span>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="eyebrow">WORKSPACE / 工作区</div>
+    <h1>内存去了哪里？</h1>
+    <p class="muted intro">从一个对象出发，顺着引用找到它被保留的原因。</p>
+    <div class="section-label">堆快照 <span>最多 2 份</span></div>
+    <div class="slot" id="slot0">
+      <div class="slot-heading"><span class="badge">A</span><strong>基线快照</strong><button class="text-button close-slot" data-slot="0" aria-label="移除基线快照" hidden>移除</button></div>
+      <button class="snapshot-name" data-slot="0" disabled>尚未打开</button>
+      <label class="file-button" for="file0">＋ 打开 .heapsnapshot</label>
+      <input type="file" id="file0" accept=".heapsnapshot,.json" data-slot="0">
+    </div>
+    <div class="slot" id="slot1">
+      <div class="slot-heading"><span class="badge">B</span><strong>对照快照</strong><button class="text-button close-slot" data-slot="1" aria-label="移除对照快照" hidden>移除</button></div>
+      <button class="snapshot-name" data-slot="1" disabled>尚未打开</button>
+      <label class="file-button" for="file1">＋ 打开 .heapsnapshot</label>
+      <input type="file" id="file1" accept=".heapsnapshot,.json" data-slot="1">
+    </div>
+    <p class="small muted">支持 Node.js / Chrome 的 V8 快照，单个文件不超过 64 MiB。</p>
+    <button id="demo" class="secondary full">试试图片缓存示例 <span>↗</span></button>
+    <button id="reset" class="text-button">清空工作区</button>
+    <div class="hint-card">
+      <span class="eyebrow">推荐调查顺序</span>
+      <ol><li>比较前后，定位增长</li><li>按保留体积找到大对象</li><li>沿引用链找到持有者</li></ol>
+    </div>
+    <div class="sidebar-bottom"><span>分析内核由 MoonBit 实现</span><a href="https://github.com/white-bear233/MoonHeap" target="_blank" rel="noreferrer">源代码 ↗</a></div>
+  </aside>
+  <main>
+    <div class="main-heading"><div><div class="eyebrow">HEAP EXPLORER</div><h2>从增长，追到引用。</h2></div><button id="export" class="secondary" disabled>↓ 导出当前报告</button></div>
+    <div id="notice" class="notice" role="status" aria-live="polite">打开快照开始分析，也可以先体验内置示例。</div>
+    <div id="error" class="error" role="alert" hidden></div>
+    <div id="busy" class="busy" hidden><span class="spinner"></span><span id="busy-text">正在分析…</span><button id="cancel" class="text-button">取消并重置工作区</button></div>
+    <section class="metrics" aria-label="快照概览">
+      <div class="metric"><span>快照浅体积合计</span><strong id="stat-size">—</strong><small>对象自身占用的字节</small></div>
+      <div class="metric"><span>对象数量</span><strong id="stat-nodes">—</strong><small id="stat-edges">等待快照</small></div>
+      <div class="metric"><span>根可达体积</span><strong id="stat-reachable">—</strong><small id="stat-unreachable">沿保留引用可达</small></div>
+      <div class="metric accent"><span>当前快照</span><strong id="stat-active">—</strong><small id="stat-name">选择基线或对照</small></div>
+    </section>
+    <section class="workspace">
+      <div class="workspace-head">
+        <nav class="tabs" aria-label="分析视图">
+          <button data-view="nodes" class="active" aria-pressed="true">对象列表</button>
+          <button data-view="groups" aria-pressed="false">类型汇总</button>
+          <button data-view="diff" aria-pressed="false">快照比较 <span>A → B</span></button>
+        </nav><span id="result-count" class="small muted">等待分析</span>
+      </div>
+      <div class="toolbar">
+        <form id="search-form"><label class="search-box"><span aria-hidden="true">⌕</span><input id="search" aria-label="搜索名称或完整对象 ID" placeholder="搜索名称或完整对象 ID"><button type="submit">查找</button></label></form>
+        <label id="sort-label" class="sort">排序 <select id="order" aria-label="排序"><option value="retained">保留体积 ↓</option><option value="shallow">浅体积 ↓</option><option value="index">记录顺序</option></select></label>
+        <label id="kind-label" class="sort">类型 <select id="kind" aria-label="对象类型"><option value="">全部</option><option>object</option><option>array</option><option>string</option><option>closure</option><option>native</option><option>code</option><option>synthetic</option><option>hidden</option><option>regexp</option><option>number</option><option>concatenated string</option><option>sliced string</option><option>symbol</option><option>bigint</option><option>object shape</option></select></label>
+      </div>
+      <div id="identity-row" class="identity" hidden><label><input type="checkbox" id="identity"> 我确认两份快照来自同一个 V8 实例，启用对象 ID 比较</label><p id="identity-result" class="small muted">默认仅比较类型、数量和浅体积；对象 ID 不能用于跨进程匹配。</p></div>
+      <div id="empty" class="empty"><div class="empty-art" aria-hidden="true"><span>◉</span><i></i><span>◈</span><i></i><span>◉</span></div><h3>把引用关系，变成调查线索</h3><p>打开快照后，在这里查找对象、查看保留体积，<br>或者比较一次操作前后的变化。</p><button id="demo-empty" class="primary">加载缓存增长示例</button></div>
+      <div id="table-wrap" class="table-wrap" hidden><table><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div>
+      <div id="changes-wrap" class="changes" hidden><h3>对象 ID 变化</h3><p class="small muted">遵循上面的同实例声明；下表与类型汇总共享分页位置。</p><div class="table-wrap"><table><thead><tr><th>ID / 名称</th><th>变化</th><th>之前浅体积</th><th>之后浅体积</th></tr></thead><tbody id="changes-body"></tbody></table></div></div>
+      <div id="pager" class="pager" hidden><span id="page-info" class="small muted"></span><div><button id="prev" class="secondary">← 上一页</button><button id="next" class="secondary">下一页 →</button></div></div>
+    </section>
+    <section id="detail" class="detail" hidden aria-label="对象详情">
+      <div class="detail-head"><div><span class="eyebrow">OBJECT INSPECTOR</span><h3 id="detail-name"></h3><p id="detail-meta" class="small muted"></p></div><button id="detail-close" class="text-button" aria-label="关闭对象详情">✕</button></div>
+      <nav class="detail-tabs" aria-label="对象关系"><button data-detail="incoming" class="active">谁引用它</button><button data-detail="outgoing">它引用谁</button><button data-detail="path">最短根路径</button><button data-detail="dominated">直接支配的对象</button></nav>
+      <p id="detail-description" class="small muted"></p><div id="detail-content"></div>
+      <div class="pager" id="detail-pager"><span id="detail-page-info" class="small muted"></span><div><button id="detail-prev" class="secondary">← 上一页</button><button id="detail-next" class="secondary">下一页 →</button></div></div>
+    </section>
+    <footer class="footnote"><strong>读懂数字</strong> 保留体积按快照中的强引用图计算。弱引用不计入，WeakMap 条件引用保守处理；这与 Chrome 的专用启发式规则可能不同。增长是调查线索，不能单凭快照认定内存泄漏。<span id="weakmap-note"></span></footer>
+  </main>
+</div>
+</body></html>
+
