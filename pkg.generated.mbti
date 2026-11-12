@@ -31,6 +31,21 @@ pub fn Edge::equal(Self, Self) -> Bool
 pub fn Edge::not_equal(Self, Self) -> Bool
 pub fn Edge::to_repr(Self) -> @debug.Repr
 
+pub struct Graph {
+  snapshot : Snapshot
+  incoming_offsets : Array[Int32]
+  incoming_edges : Array[Int32]
+  retaining : Array[Bool]
+  distance : Array[Int32]
+  parent_edge : Array[Int32]
+  conditional_edges : Int32
+}
+pub fn Graph::is_retaining(Self, Int32) -> Bool raise HeapError
+pub fn Graph::root_distance(Self, Int32) -> Int32? raise HeapError
+pub fn Graph::root_path(Self, Int32, max_depth? : Int32) -> Array[Edge]? raise HeapError
+pub fn Graph::snapshot(Self) -> Snapshot
+pub fn Graph::weakmap_edge_count(Self) -> Int32
+
 #derive(@debug.Debug)
 pub(all) struct Limits {
   max_chars : Int32
@@ -67,6 +82,7 @@ pub struct Snapshot {
 pub fn Snapshot::edge(Self, Int32) -> Edge raise HeapError
 pub fn Snapshot::edge_count(Self) -> Int32
 pub fn Snapshot::find_id(Self, String) -> Int32?
+pub fn Snapshot::graph(Self) -> Graph
 pub fn Snapshot::node(Self, Int32) -> Node raise HeapError
 pub fn Snapshot::node_count(Self) -> Int32
 pub fn Snapshot::root_index(Self) -> Int32
