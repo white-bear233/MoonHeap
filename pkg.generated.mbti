@@ -36,6 +36,12 @@ pub fn Analysis::nodes(Self, order? : String, query? : String, kind? : String, o
 pub fn Analysis::reachable_count(Self) -> Int32
 pub fn Analysis::retained_bytes(Self, Int32) -> Int64? raise HeapError
 
+type Decoder
+pub fn Decoder::characters_read(Self) -> Int32
+pub fn Decoder::feed(Self, String) -> Unit raise HeapError
+pub fn Decoder::finish(Self) -> Snapshot raise HeapError
+pub fn Decoder::new(limits? : Limits) -> Self raise HeapError
+
 #derive(Eq, @debug.Debug)
 pub(all) struct Edge {
   index : Int32

@@ -99,24 +99,28 @@ pub fn parse(
   input : String,
   limits~ : Limits = Limits::default(),
 ) -> Snapshot raise HeapError {
-  validate_limits(limits)
-  guard input.length() <= limits.max_chars else {
-    raise Limit("input exceeds max_chars")
-  }
-  let doc = @json.parse(
-    input,
-    reject_duplicate_keys=true,
-    preserve_number_repr=true,
-    max_nesting_depth=64,
-  ) catch {
-    e => raise Invalid("JSON: \{e}")
-  }
-  parse_document(doc, limits)
+  let decoder = Decoder::new(limits~)
+  decoder.feed(input)
+  decoder.finish()
 }
 
 ///|
-fn parse_document(doc : Json, limits : Limits) -> Snapshot raise HeapError {
-  let header = field(doc, "snapshot")
+fn index_value(n : UInt64, context : String) -> Int32 raise HeapError {
+  guard n <= 2147483647UL else {
+    raise Limit("\{context}: exceeds index range")
+  }
+  n.to_int()
+}
+
+///|
+fn parse_parts(
+  metadata : Map[String, Json],
+  raw_nodes : Array[UInt64],
+  raw_edges : Array[UInt64],
+  strings : Array[String],
+  limits : Limits,
+) -> Snapshot raise HeapError {
+  let header = metadata.get("snapshot").unwrap()
   let meta = field(header, "meta")
   let nf = string_array(field(meta, "node_fields"), "node_fields")
   let ef = string_array(field(meta, "edge_fields"), "edge_fields")
@@ -145,24 +149,10 @@ fn parse_document(doc : Json, limits : Limits) -> Snapshot raise HeapError {
   guard count <= limits.max_nodes && ecount <= limits.max_edges else {
     raise Limit("node/edge budget exceeded")
   }
-  let raw_nodes = array(field(doc, "nodes"), "nodes")
-  let raw_edges = array(field(doc, "edges"), "edges")
   guard raw_nodes.length().to_int64() ==
     count.to_int64() * nf.length().to_int64() &&
     raw_edges.length().to_int64() == ecount.to_int64() * ef.length().to_int64() else {
     raise Invalid("flat array length/count mismatch")
-  }
-  let raw_strings = array(field(doc, "strings"), "strings")
-  guard raw_strings.length() <= limits.max_strings else {
-    raise Limit("string table budget exceeded")
-  }
-  let strings = raw_strings.map(v => text(v, "string table"))
-  // Validate extra numeric fields too; unknown optional columns can be retained by the producer.
-  for v in raw_nodes {
-    ignore(unsigned(v, "nodes"))
-  }
-  for v in raw_edges {
-    ignore(unsigned(v, "edges"))
   }
   let ids : Map[String, Int32] = Map([])
   let nodes : Array[Node] = []
@@ -170,10 +160,10 @@ fn parse_document(doc : Json, limits : Limits) -> Snapshot raise HeapError {
   let mut total = 0L
   for i in 0..<count {
     let b = i * nf.length()
-    let id = unsigned(raw_nodes[b + ni], "node id").to_string()
+    let id = raw_nodes[b + ni].to_string()
     guard !ids.contains(id) else { raise Invalid("duplicate node id: \{id}") }
     ids[id] = i
-    let size = unsigned(raw_nodes[b + ns], "self_size")
+    let size = raw_nodes[b + ns]
     guard size <= 9007199254740991UL else {
       raise Limit("self_size exceeds exact byte range")
     }
@@ -181,7 +171,7 @@ fn parse_document(doc : Json, limits : Limits) -> Snapshot raise HeapError {
     guard total <= 9007199254740991L else {
       raise Limit("total size exceeds exact byte range")
     }
-    let edges = integer(raw_nodes[b + nc], "node edge_count")
+    let edges = index_value(raw_nodes[b + nc], "node edge_count")
     guard edges <= ecount - edge_cursor else {
       raise Invalid("node edge counts exceed total")
     }
@@ -190,12 +180,12 @@ fn parse_document(doc : Json, limits : Limits) -> Snapshot raise HeapError {
       id,
       kind: indexed(
         node_types,
-        integer(raw_nodes[b + nt], "node type"),
+        index_value(raw_nodes[b + nt], "node type"),
         "node type",
       ),
       name: indexed(
         strings,
-        integer(raw_nodes[b + nn], "node name"),
+        index_value(raw_nodes[b + nn], "node name"),
         "node name",
       ),
       self_size: size.reinterpret_as_int64(),
@@ -228,7 +218,7 @@ fn parse_document(doc : Json, limits : Limits) -> Snapshot raise HeapError {
       let b = index * ef.length()
       let kind = indexed(
         edge_types,
-        integer(raw_edges[b + et], "edge type"),
+        index_value(raw_edges[b + et], "edge type"),
         "edge type",
       )
       guard kind == "context" ||
@@ -240,14 +230,18 @@ fn parse_document(doc : Json, limits : Limits) -> Snapshot raise HeapError {
         kind == "weak" else {
         raise Invalid("unsupported edge type: \{kind}")
       }
-      let dest = integer(raw_edges[b + ed], "to_node")
+      let dest = index_value(raw_edges[b + ed], "to_node")
       guard dest % nf.length() == 0 && dest < raw_nodes.length() else {
         raise Invalid("edge target must be a node offset")
       }
       let name = if kind == "element" || kind == "hidden" {
-        unsigned(raw_edges[b + en], "edge name").to_string()
+        raw_edges[b + en].to_string()
       } else {
-        indexed(strings, integer(raw_edges[b + en], "edge name"), "edge name")
+        indexed(
+          strings,
+          index_value(raw_edges[b + en], "edge name"),
+          "edge name",
+        )
       }
       edges.push({
         index,
