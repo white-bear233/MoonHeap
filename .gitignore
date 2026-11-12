@@ -8,5 +8,7 @@ dist/
 web/engine.mjs
 work/
 node_modules/
+.playwright-cli/
+output/playwright/
 *.heapsnapshot
 !examples/*.heapsnapshot
