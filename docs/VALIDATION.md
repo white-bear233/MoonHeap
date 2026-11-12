@@ -92,5 +92,9 @@ node scripts/benchmark.mjs
 
 ## 发布前复核
 
-`moon info` 和 `moon fmt` 保持生成接口与格式一致；`moon publish --dry-run` 会打包、解包、重新检查并向注册表验证。正式发布后还会从注册表创建外部消费者项目验证调用，不只依赖仓库内相对路径。
+`moon info` 和 `moon fmt` 保持生成接口与格式一致；`moon publish --dry-run` 已完成打包、解包、重新检查和注册表验证。
+
+`moon publish` 发布 white-bear233/moonheap@0.1.0，注册表返回 200 OK。随后新建独立项目，通过 `moon add white-bear233/moonheap@0.1.0` 下载正式包，分别运行 JS 和 Wasm GC 消费者示例，得到 2 个对象、根保留 32 B、缓存根距离为 1。
+
+GitHub 分发包在独立目录解压后直接运行预编译 CLI，示例结果为 42 个节点、591424 B；不依赖原仓库中的编译路径。
 

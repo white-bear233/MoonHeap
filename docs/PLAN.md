@@ -5,18 +5,29 @@ and an offline browser explorer running the same compiled library in a worker.
 
 ## Milestones (each validated and pushed separately)
 
-1. Architecture, scope and acceptance criteria.
-2. Immutable public model, limits, errors and synthetic fixtures.
-3. Strict metadata-driven parser: exact IDs, reordered fields, malformed data.
-4. Forward/reverse reference indexes and retaining-edge policy.
-5. Reachability, dominators and retained bytes, checked by an independent oracle.
-6. Group/ranking queries, references and shortest root paths.
-7. Aggregate comparison and explicitly confirmed same-isolate identity comparison.
-8. Versioned JSON interface and CLI with resource limits and meaningful exit codes.
-9. Real V8 baseline/growth/cleanup snapshots and differential verification.
-10. Offline browser explorer with worker isolation.
-11. Cross-backend CI, scale benchmark and consumer example.
-12. Documentation, proposal, release and Mooncakes publication.
+- [x] Architecture, scope and acceptance criteria.
+- [x] Immutable public model, limits, errors and synthetic fixtures.
+- [x] Strict metadata-driven parser: exact IDs, reordered fields, malformed data.
+- [x] Forward/reverse reference indexes and retaining-edge policy.
+- [x] Reachability, dominators and retained bytes, checked by an independent oracle.
+- [x] Group/ranking queries, references and shortest root paths.
+- [x] Aggregate comparison and explicitly confirmed same-isolate identity comparison.
+- [x] Versioned JSON interface and CLI with resource limits and meaningful exit codes.
+- [x] Real V8 baseline/growth/cleanup snapshots and differential verification.
+- [x] Offline browser explorer with worker isolation.
+- [x] Cross-backend CI, scale benchmark and consumer example.
+- [x] Documentation, proposal, distribution packaging and Mooncakes publication.
+
+## Delivered evidence
+
+Version 0.1.0 is published as `white-bear233/moonheap`. An independent consumer
+installed it from the registry and ran the public API on JS and Wasm GC.
+Linux native is verified in CI. Browser workflows, cancellation, real V8 data
+and scaling measurements are recorded in [VALIDATION.md](VALIDATION.md).
+
+The GitHub release workflow builds source + precompiled CLI/browser ZIPs for
+version tags; release status and downloads are available on the repository's
+[Releases page](https://github.com/white-bear233/MoonHeap/releases).
 
 ## Semantic contract
 
