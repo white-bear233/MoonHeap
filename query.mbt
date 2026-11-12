@@ -34,16 +34,31 @@ pub fn Analysis::nodes(
   order~ : String = "retained",
   query~ : String = "",
   kind~ : String = "",
+  min_retained~ : Int64 = -1L,
+  min_shallow~ : Int64 = 0L,
+  reachability~ : String = "all",
   offset~ : Int32 = 0,
   limit~ : Int32 = 100,
 ) -> NodePage raise HeapError {
   page_bounds(offset, limit)
+  guard ["all", "reachable", "unreachable"].contains(reachability) &&
+    min_retained >= -1L &&
+    min_shallow >= 0L else {
+    raise Invalid("invalid object filter")
+  }
   guard order == "retained" || order == "shallow" || order == "index" else {
     raise Invalid("unknown node sort order")
   }
   let found = self.graph.snapshot.nodes.filter(n => {
     (query == "" || n.name.contains(query) || n.id == query) &&
-    (kind == "" || n.kind == kind)
+    (kind == "" || n.kind == kind) &&
+    n.self_size >= min_shallow &&
+    self.retained[n.index] >= min_retained &&
+    (
+      reachability == "all" ||
+      (reachability == "reachable" && self.retained[n.index] >= 0L) ||
+      (reachability == "unreachable" && self.retained[n.index] < 0L)
+    )
   })
   if order != "index" {
     found.sort_by((a, b) => {

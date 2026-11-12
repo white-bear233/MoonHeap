@@ -21,7 +21,9 @@ Options:
   --group-offset N --change-offset N   independent diff pagination
   --status added|removed|resized|retention_changed
   --min-growth BYTES            minimum group/retained delta
-  --min-retained BYTES          minimum cleanup survivor retained size
+  --min-retained BYTES          minimum object / survivor retained size
+  --min-shallow BYTES           minimum object shallow size
+  --reachability all|reachable|unreachable
   --all-groups                  include fully recovered groups in investigation
   --outgoing --retaining-only   reference direction / edge filter
   --max-depth N --max-paths N   bounded path enumeration
@@ -48,11 +50,11 @@ try {
   else if (args[0] === '--version') console.log('0.2.0');
   else {
     const command = args.shift(), files = [], options = {}, flags = new Set();
-    const strings = {'--id':'id','--query':'query','--kind':'kind','--order':'order','--status':'status',
+    const strings = {'--id':'id','--query':'query','--kind':'kind','--order':'order','--status':'status','--reachability':'reachability',
       '--format':'format','--view':'view','--output':'output','--manifest':'manifest','--scenario':'scenario','--output-dir':'output_dir'};
     const numbers = {'--limit':'limit','--offset':'offset','--max-depth':'max_depth','--max-paths':'max_paths',
       '--cycle-id':'cycle_id','--group-offset':'group_offset','--change-offset':'change_offset','--min-growth':'min_growth',
-      '--min-retained':'min_retained','--max-mib':'max_mib','--max-work':'max_work','--max-rows':'max_rows','--iterations':'iterations','--timeout':'timeout'};
+      '--min-retained':'min_retained','--min-shallow':'min_shallow','--max-mib':'max_mib','--max-work':'max_work','--max-rows':'max_rows','--iterations':'iterations','--timeout':'timeout'};
     const booleans = {'--same-isolate':['same_isolate',true],'--outgoing':['incoming',false],'--retaining-only':['retaining_only',true],
       '--all-groups':['residual_only',false],'--force':['force',true],'--allocation-traces':['allocation_traces',true]};
     for (let i=0;i<args.length;i++) {
@@ -63,7 +65,7 @@ try {
       if (!(arg in strings) && !(arg in numbers)) fail('invalid_input','Unknown option: '+arg);
       const value=args[++i]; if (value===undefined || value.startsWith('--')) fail('invalid_input','Missing value for '+arg);
       if (arg in numbers) {
-        const cap=['--min-growth','--min-retained'].includes(arg)?Number.MAX_SAFE_INTEGER:2147483647;
+        const cap=['--min-growth','--min-retained','--min-shallow'].includes(arg)?Number.MAX_SAFE_INTEGER:2147483647;
         if (!/^\d+$/.test(value) || Number(value)>cap) fail('invalid_input','Invalid integer for '+arg);
         options[numbers[arg]]=Number(value);
       } else options[strings[arg]]=value;

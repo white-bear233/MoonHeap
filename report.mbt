@@ -72,7 +72,7 @@ pub fn Inspector::report(
     Object(m) => m.copy()
     _ => Map([])
   }
-  opts["op"] = @json.to_json(view)
+  opts["op"] = @json.to_json(if view == "refs" { "references" } else { view })
   opts["limit"] = @json.to_json(1000)
   let items : Array[Json] = []
   let groups : Array[Json] = []
@@ -84,7 +84,7 @@ pub fn Inspector::report(
     opts["group_offset"] = @json.to_json(cursor)
     opts["change_offset"] = @json.to_json(cursor)
     let options = @json.to_json(opts).stringify()
-    let page = if view == "diff" {
+    let raw_page = if view == "diff" {
       self.diff(handle, int_option(req, "after_handle", handle), options)
     } else if view == "investigate" {
       self.investigate(
@@ -95,6 +95,19 @@ pub fn Inspector::report(
       )
     } else {
       self.query(handle, options)
+    }
+    // A tree report includes every direct child of the selected node. Flatten
+    // its paginated children, retaining node and ancestor context in the report.
+    let page : Json = if view == "tree" {
+      let children = field(raw_page, "children")
+      {
+        "node": field(raw_page, "node"),
+        "ancestors": field(raw_page, "ancestors"),
+        "items": field(children, "items"),
+        "total": field(children, "total"),
+      }
+    } else {
+      raw_page
     }
     if cursor == 0 {
       first = page
@@ -171,6 +184,8 @@ pub fn Inspector::report(
 ///|
 fn report_columns(view : String) -> Array[String] {
   match view {
+    "refs" | "references" =>
+      ["index", "kind", "name", "retaining", "source", "target"]
     "groups" => ["kind", "name", "count", "shallow_bytes", "max_retained_bytes"]
     "diff" =>
       [

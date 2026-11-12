@@ -47,7 +47,7 @@ pub fn Analysis::graph(Self) -> Graph
 pub fn Analysis::groups(Self) -> Array[Group]
 pub fn Analysis::immediate_dominator(Self, Int32) -> Int32? raise HeapError
 pub fn Analysis::iterations(Self) -> Int32
-pub fn Analysis::nodes(Self, order? : String, query? : String, kind? : String, offset? : Int32, limit? : Int32) -> NodePage raise HeapError
+pub fn Analysis::nodes(Self, order? : String, query? : String, kind? : String, min_retained? : Int64, min_shallow? : Int64, reachability? : String, offset? : Int32, limit? : Int32) -> NodePage raise HeapError
 pub fn Analysis::reachable_count(Self) -> Int32
 pub fn Analysis::retained_bytes(Self, Int32) -> Int64? raise HeapError
 

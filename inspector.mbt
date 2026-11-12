@@ -240,13 +240,21 @@ pub fn Inspector::query(
           order=string_option(req, "order", "retained"),
           query=string_option(req, "query", ""),
           kind=string_option(req, "kind", ""),
+          min_retained=size_option(req, "min_retained", -1L),
+          min_shallow=size_option(req, "min_shallow", 0L),
+          reachability=string_option(req, "reachability", "all"),
           offset~,
           limit~,
         ),
       )
     "groups" => {
       let q = string_option(req, "query", "")
-      let groups = a.groups().filter(g => q == "" || g.name.contains(q))
+      let kind = string_option(req, "kind", "")
+      let groups = a
+        .groups()
+        .filter(g => {
+          (q == "" || g.name.contains(q)) && (kind == "" || g.kind == kind)
+        })
       let items : Array[Json] = []
       for i in 0..<groups.length() {
         if i >= offset && items.length() < limit {

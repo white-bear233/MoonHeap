@@ -122,14 +122,19 @@ pub fn Inspector::investigate(
   )
   let q = string_option(req, "query", "")
   let kind = string_option(req, "kind", "")
-  let min_retained = size_option(req, "min_retained", 0L)
+  let min_retained = size_option(req, "min_retained", -1L)
   let only_residual = bool_option(req, "residual_only", true)
+  let surviving_groups : Map[String, Bool] = Map([])
+  for node in result.survivors {
+    surviving_groups[node.kind + ":" + node.name] = true
+  }
   let groups = result.groups.filter(g => {
     (q == "" || g.name.contains(q)) &&
     (kind == "" || g.kind == kind) &&
     (
       !only_residual ||
-      (g.growth_count > g.before_count && g.cleanup_count > g.before_count)
+      (g.growth_count > g.before_count && g.cleanup_count > g.before_count) ||
+      surviving_groups.contains(g.kind + ":" + g.name)
     )
   })
   let rows : Array[Json] = []
