@@ -1,0 +1,38 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Install tested MoonBit
+        run: |
+          curl --retry 3 -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s '0.10.20+65efd5b93'
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: Verify version and library
+        run: |
+          node -e "if ('v' + JSON.parse(require('fs').readFileSync('package.json')).version !== process.env.GITHUB_REF_NAME) process.exit(1)"
+          moon test --target js --deny-warn
+          moon test --target wasm-gc --deny-warn
+          moon test --target native --deny-warn
+          moon info
+          moon fmt
+          git diff --exit-code
+      - name: Build and verify hosts
+        run: |
+          node scripts/build.mjs
+          node --test tests/*.test.mjs
+      - name: Package sources and compiled engine
+        run: python scripts/package-release.py
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/MoonHeap-*.zip dist/MoonHeap-*.zip.sha256 --verify-tag --title "MoonHeap $GITHUB_REF_NAME" --notes-file docs/RELEASE.md
+
