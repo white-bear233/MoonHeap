@@ -84,3 +84,16 @@ pub fn investigate_snapshots(
     e => @heap.failure(e)
   }
 }
+
+///|
+#export_name("check_cleanup")
+pub fn check_cleanup(
+  before : Int32,
+  growth : Int32,
+  cleanup : Int32,
+  options : String,
+) -> String {
+  @heap.success(inspector.check_cleanup(before, growth, cleanup, options)) catch {
+    e => @heap.failure(e)
+  }
+}

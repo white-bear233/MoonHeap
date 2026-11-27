@@ -90,6 +90,19 @@ node bin/moonheap.mjs report examples/before.heapsnapshot examples/growth.heapsn
 
 `report` 收集全部匹配行，忽略分页起点；每个结果列表默认最多 100000 行，可用 `--max-rows` 调整。文件存在时须明确传 `--force` 才覆盖。CSV 保护文本公式与精确 ID；HTML 自包含且不运行脚本。详见 [API](docs/API.md)。
 
+## 在 CI 中检查清理后的残留
+
+`check` 对全部匹配的新增存活对象执行预算检查，不受分页影响。默认要求零残留；也可设置允许的对象数、浅体积字节数，或同时设置两者。浅体积不会重复累加共享子树的保留体积。
+
+```sh
+node bin/moonheap.mjs check examples/before.heapsnapshot examples/growth.heapsnapshot examples/cleanup.heapsnapshot --same-isolate --query PhotoEntry --kind object --json
+node bin/moonheap.mjs check examples/before.heapsnapshot examples/growth.heapsnapshot examples/residual.heapsnapshot --same-isolate --query PhotoEntry --kind object --max-survivors 2 --json
+```
+
+退出码：`0` 在预算内，`6` 超出预算，`4` 来源未确认或存在身份歧义；其他输入、资源、文件错误分别为 `2/3/5`。真实采集可用 `--manifest work/my-capture/capture.json` 替代 `--same-isolate`。即使显式排除冲突 ID，只要仍有身份歧义，检查也返回 `inconclusive`，不会悄悄通过。JSON 包含阈值、实际值、最多 20 个样本和来源运行 ID。
+
+“通过”仅表示所选对象满足预算，不代表整个程序没有泄漏。建议用业务专用类名筛选，并将结果写入 CI 构件：`--output work/check.json --json`；没有设置的阈值不参与判断。
+
 ## 作为 MoonBit 库
 
 ```sh

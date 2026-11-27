@@ -152,3 +152,17 @@ CLI 使用 `--json` 时，stdout 仅含成功结果，stderr 含错误信封；�
 validate 会完整解析和分析。CLI 每次重新打开文件，交互应用优先重用 Inspector。capture 运行指定模块的 setup/exercise/cleanup；--manifest 验证输入与采集清单的字节数和 SHA-256 一致，然后启用同 isolate 模式。清单是采集来源记录，不是对任意外来文件的加密身份认证。
 
 网页支持三份文件、多文件选择/拖放、读取进度、终止 Worker 取消、查询历史和对象书签。保存工作区把 File、筛选、身份声明、视图及书签存入当前来源的 IndexedDB；恢复会重新解析。取消/清空当前不删除已保存数据；“删除已保存数据”单独移除持久记录。浏览器配额或隐私设置不允许保存时，显示错误，不声称成功。
+
+## 清理回归预算（0.3.0）
+
+`check_cleanup(before, growth, cleanup, same_isolate=true, query="Entry", max_survivors=Some(0))`
+返回 `CleanupCheck`；三个参数均为 `Analysis`。可同时提供 `max_survivor_bytes : Int64?`。
+两项阈值都省略时默认零残留；只指定其中一项时，另一项不设限。边界值包含在预算内。
+`query` 匹配名称子串或精确 ID，`kind` 匹配类型；检查覆盖所有匹配对象，包括仍在快照中的不可达记录。
+`shallow_bytes` 是这些对象自身大小之和，不叠加保留体积。身份排除使结果为 `inconclusive`。
+
+`Inspector::check_cleanup(a, b, c, request)` 和 JS `check_cleanup(a,b,c,request)` 提供相同判断。
+JSON 响应包含 `status`（passed/exceeded/inconclusive）、`passed`、`matched_survivors`、
+`shallow_bytes`、`unreachable_survivors`、阈值、排除数量、最多 20 个样本和 `provenance_run_id`。
+分页参数不改变统计。CLI 拒绝不适用于预算检查的筛选和分页选项，避免误以为它们改变了判断。
+

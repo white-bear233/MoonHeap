@@ -6,6 +6,8 @@ pub fn abort_snapshot(Int32) -> Unit
 
 pub fn begin_snapshot(String) -> String
 
+pub fn check_cleanup(Int32, Int32, Int32, String) -> String
+
 pub fn close_snapshot(Int32) -> Unit
 
 pub fn diff_snapshots(Int32, Int32, String) -> String
