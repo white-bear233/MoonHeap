@@ -1,4 +1,4 @@
-# MoonHeap 0.2 API
+# MoonHeap 0.3 API
 
 ## MoonBit 库
 
@@ -10,7 +10,7 @@
 | Snapshot | node/edge、find_id、node_count/edge_count/root_index/total_shallow_bytes、graph、source_location、allocation_stack、allocation_totals |
 | Graph | analyze、references、root_path、root_paths、cycles、root_distance、is_retaining、weakmap_edge_count |
 | Analysis | nodes、groups、retained_bytes、immediate_dominator、dominated、dominator_chain、compare |
-| Inspector | new(max_snapshots?)、open、accept、query、diff、investigate、report、export_report、close |
+| Inspector | new(max_snapshots?)、open、accept、query、diff、investigate、check_cleanup、report、export_report、close |
 
 `parse(input, limits?)` 使用同一个增量解析器一次性 feed。Decoder 失败或 finish 后不能重用。feed 接受已正确解码的文本，跨块转义、数字和字符串受支持；宿主必须保持 UTF-8 多字节边界。
 
@@ -153,6 +153,16 @@ validate 会完整解析和分析。CLI 每次重新打开文件，交互应用�
 
 网页支持三份文件、多文件选择/拖放、读取进度、终止 Worker 取消、查询历史和对象书签。保存工作区把 File、筛选、身份声明、视图及书签存入当前来源的 IndexedDB；恢复会重新解析。取消/清空当前不删除已保存数据；“删除已保存数据”单独移除持久记录。浏览器配额或隐私设置不允许保存时，显示错误，不声称成功。
 
+## 对象证据包（0.3.0）
+
+`Inspector::query(handle, {"op":"explain","id":"7"})` 汇总 `node`、`reachable`、
+`retainers`、`root_paths`、`dominators`、`allocation` 和 `complete`。请求仍以 JSON 字符串传入。
+`retainer_limit` 为 1–1000，默认 100；根路径采用 `max_paths/max_depth/max_work` 的现有预算。
+`retainers.complete` 与 `root_paths.complete` 均为真时，顶层 `complete` 才为真；缺少分配记录通过
+`allocation.available` 单独表示。`fallback_handle` 的来源回查需要 `same_isolate=true`。
+`report/export_report` 的 `view:"explain"` 支持 JSON、HTML；不支持扁平 CSV。
+HTML 将证据分节展示，并转义所有对象名、引用名、源码路径。支配树报告同时保留选中对象和祖先上下文。
+
 ## 清理回归预算（0.3.0）
 
 `check_cleanup(before, growth, cleanup, same_isolate=true, query="Entry", max_survivors=Some(0))`
@@ -165,4 +175,3 @@ validate 会完整解析和分析。CLI 每次重新打开文件，交互应用�
 JSON 响应包含 `status`（passed/exceeded/inconclusive）、`passed`、`matched_survivors`、
 `shallow_bytes`、`unreachable_survivors`、阈值、排除数量、最多 20 个样本和 `provenance_run_id`。
 分页参数不改变统计。CLI 拒绝不适用于预算检查的筛选和分页选项，避免误以为它们改变了判断。
-

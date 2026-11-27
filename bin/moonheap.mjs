@@ -12,7 +12,7 @@ Usage: node bin/moonheap.mjs <command> <snapshot> [options]
        node bin/moonheap.mjs check <baseline> <growth> <cleanup> --same-isolate [--max-survivors N] [--max-survivor-bytes N]
        node bin/moonheap.mjs report <snapshot(s)> --view nodes|groups|cycles|diff|investigate --format json|csv|html
        node bin/moonheap.mjs capture --scenario ./scenario.mjs --output-dir ./captures/run1 [--allocation-traces]
-Commands: summary, validate, nodes, groups, node, refs, path, paths, source, tree,
+Commands: summary, validate, nodes, groups, node, explain, refs, path, paths, source, tree,
           cycles, cycle, dominated, diff, investigate, check, report, capture
 Options:
   --id DECIMAL                 exact object ID for object operations
@@ -28,6 +28,7 @@ Options:
   --all-groups                  include fully recovered groups in investigation
   --outgoing --retaining-only   reference direction / edge filter
   --max-depth N --max-paths N   bounded path enumeration
+  --retainer-limit N           explain incoming-reference sample, 1..1000
   --cycle-id N                 inspect a cycle group's members
   --same-isolate                caller assertion for object identity
   --exclude-conflicts           exclude ambiguous IDs and report their count
@@ -59,7 +60,7 @@ try {
     const numbers = {'--limit':'limit','--offset':'offset','--max-depth':'max_depth','--max-paths':'max_paths',
       '--cycle-id':'cycle_id','--group-offset':'group_offset','--change-offset':'change_offset','--min-growth':'min_growth',
       '--min-retained':'min_retained','--min-shallow':'min_shallow','--max-mib':'max_mib','--max-work':'max_work','--max-rows':'max_rows','--iterations':'iterations','--timeout':'timeout',
-      '--max-survivors':'max_survivors','--max-survivor-bytes':'max_survivor_bytes'};
+      '--max-survivors':'max_survivors','--max-survivor-bytes':'max_survivor_bytes','--retainer-limit':'retainer_limit'};
     const booleans = {'--same-isolate':['same_isolate',true],'--exclude-conflicts':['exclude_conflicts',true],'--outgoing':['incoming',false],'--retaining-only':['retaining_only',true],
       '--all-groups':['residual_only',false],'--force':['force',true],'--allocation-traces':['allocation_traces',true]};
     for (let i=0;i<args.length;i++) {
@@ -75,7 +76,7 @@ try {
         options[numbers[arg]]=Number(value);
       } else options[strings[arg]]=value;
     }
-    const commands=['summary','validate','nodes','groups','node','refs','path','paths','source','tree','cycles','cycle','dominated','diff','investigate','check','report','capture'];
+    const commands=['summary','validate','nodes','groups','node','explain','refs','path','paths','source','tree','cycles','cycle','dominated','diff','investigate','check','report','capture'];
     if (!commands.includes(command)) fail('invalid_input','Unknown command: '+command);
     const operation=command==='report'?(options.view??'nodes'):command;
     const needed=command==='capture'?0:['investigate','check'].includes(operation)?3:operation==='diff'?2:1;
@@ -86,7 +87,7 @@ try {
       for (const flag of flags) if (!allowed.has(flag)) fail('invalid_input',flag+' does not apply to cleanup checks');
       if (!options.same_isolate && !options.manifest) fail('identity_conflict','check requires --same-isolate or a capture --manifest');
     } else if (options.max_survivors!==undefined || options.max_survivor_bytes!==undefined) fail('invalid_input','Cleanup thresholds require the check command');
-    if (['node','refs','path','paths','source','dominated'].includes(operation) && !options.id) fail('invalid_input','--id is required');
+    if (['node','explain','refs','path','paths','source','dominated'].includes(operation) && !options.id) fail('invalid_input','--id is required');
     if (options.id && !/^(0|[1-9]\d*)$/.test(options.id)) fail('invalid_input','Object ID must be a decimal string');
     let data, raw, output;
     if (command==='capture') {

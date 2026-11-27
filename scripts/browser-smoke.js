@@ -27,6 +27,13 @@ async (page) => {
   await detail('path');check((await page.locator('#detail-content').textContent()).includes('photoCache'),'survivor holder path');
   await detail('paths');check(await page.locator('#detail-content .path-block').count()>0,'multiple paths UI');
   await detail('source');check((await page.locator('#detail-content').textContent()).includes('没有分配调用栈'),'missing source is explicit');
+  await page.evaluate(()=>{const create=URL.createObjectURL.bind(URL);URL.createObjectURL=blob=>{window.evidenceBlob=blob;return create(blob);};});
+  const evidenceDownload=page.waitForEvent('download');await page.locator('#export-object').click();await settle();
+  const evidence=await evidenceDownload;await evidence.saveAs('work/browser-object-evidence.html');
+  check(/^moonheap-object-\d+\.html$/.test(evidence.suggestedFilename()),'object evidence filename');
+  const evidenceText=await page.evaluate(()=>window.evidenceBlob.text());
+  for(const section of ['PhotoEntry','photoCache','直接持有者','根路径','分配来源','支配关系'])check(evidenceText.includes(section),'object evidence missing '+section);
+  check(!evidenceText.includes('<script'),'object evidence is offline script-free HTML');
   await page.locator('#bookmark').click();
   await detail('incoming');await page.locator('#detail-content .row-link').first().click();await settle();
   await page.locator('#history-back').click();await settle();check(await page.locator('#detail-name').textContent()==='PhotoEntry','object back navigation');
@@ -44,6 +51,11 @@ async (page) => {
   check(await page.locator('#treemap rect').count()>0,'retained size map');
   await page.locator('#table-body .tree-action').first().click();await settle();
   check(await page.locator('#tree-breadcrumbs button').count()>1,'dominator tree drilldown');
+  await page.locator('#export-format').selectOption('json');
+  await page.evaluate(()=>{const create=URL.createObjectURL.bind(URL);URL.createObjectURL=blob=>{window.evidenceBlob=blob;return create(blob);};});
+  const treeDownload=page.waitForEvent('download');await page.locator('#export').click();await settle();await treeDownload;
+  const treeReport=await page.evaluate(async()=>JSON.parse(await window.evidenceBlob.text()));
+  check(treeReport.view==='tree'&&treeReport.data.node&&treeReport.data.ancestors.length>1,'tree export retains selected object and ancestors');
   await tab('groups');await page.locator('#kind').selectOption('array');await settle();
   check(await page.locator('#table-body tr').count()===1,'group kind filter');
   await page.locator('#kind').selectOption('');await settle();

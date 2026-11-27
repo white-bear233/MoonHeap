@@ -35,6 +35,7 @@ async function dispatch({id,method,slot,file,request={},options={}}) {
   if(method==='diff') return unwrap(diff_snapshots(required(0),required(1),JSON.stringify(request)));
   if(method==='investigate') return unwrap(investigate_snapshots(required(0),required(1),required(2),JSON.stringify(request)));
   if(method==='export') {
+    if(request.fallback_slot!=null) request.fallback_handle=required(request.fallback_slot);
     if(request.view==='diff') request.after_handle=required(1);
     if(request.view==='investigate') {request.growth_handle=required(1);request.cleanup_handle=required(2);}
     const first=['diff','investigate'].includes(request.view)?0:slot;

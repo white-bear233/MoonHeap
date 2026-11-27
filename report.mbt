@@ -175,7 +175,11 @@ pub fn Inspector::report(
   }
   {
     "format": "moonheap-report-v2",
-    "complete": true,
+    "complete": if view == "explain" {
+      field(result, "complete")
+    } else {
+      @json.to_json(true)
+    },
     "view": @json.to_json(view),
     "policy": "snapshot-strong-v1",
     "request": req,
@@ -274,17 +278,34 @@ pub fn Inspector::export_report(
     writer.write(
       "<!doctype html><html lang=\"zh-CN\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>MoonHeap report</title><style>body{font:14px/1.6 system-ui;margin:32px;color:#173f39}table{border-collapse:collapse}th,td{border:1px solid #dce5e2;padding:8px;text-align:left;vertical-align:top}pre{white-space:pre-wrap;overflow-wrap:anywhere}th{background:#eff6f2}</style><h1>MoonHeap · 完整调查报告</h1><p>视图：" +
       html_escape(view) +
-      " · 已包含全部匹配行。增长或存活本身不证明泄漏。</p><h2>概览与查询条件</h2><pre>" +
+      (if view == "explain" {
+        " · 对象证据；路径和引用是否穷尽见下方。"
+      } else {
+        " · 已包含全部匹配行。"
+      }) +
+      "增长或存活本身不证明泄漏。</p><h2>概览与查询条件</h2><pre>" +
       html_escape(field(report, "summary").stringify()) +
       "\n" +
       html_escape(req.stringify()) +
       "</pre>",
     )
-    if records.is_empty() {
+    if view == "explain" {
+      evidence_html(writer, data)
+    } else if records.is_empty() {
       writer.write(
         "<h2>结果</h2><pre>" + html_escape(data.stringify()) + "</pre>",
       )
     } else {
+      if view == "tree" {
+        writer.write("<h2>当前对象与支配祖先</h2>")
+        evidence_table(writer, report_columns("nodes"), [field(data, "node")])
+        evidence_table(
+          writer,
+          ["id", "name", "kind", "retained_bytes"],
+          array(field(data, "ancestors"), "ancestors"),
+        )
+        writer.write("<h2>直接支配的对象</h2>")
+      }
       writer.write("<table><thead><tr>")
       for key in columns {
         writer.write("<th>" + html_escape(key) + "</th>")

@@ -71,6 +71,7 @@ function updateControls(){
   const t=totals();enabled('prev',offset>0);enabled('next',offset+PAGE<t.main);
   enabled('change-prev',changeOffset>0);enabled('change-next',changeOffset+PAGE<t.changes);
   enabled('export',!!lastResult);enabled('save-workspace',slots.some(Boolean));
+  enabled('export-object',!!selected);
   enabled('history-back',historyAt>0);enabled('history-forward',historyAt>=0&&historyAt<history.length-1);
 }
 function clearDetail(){selected=null;$('detail').hidden=true;}
@@ -270,12 +271,22 @@ async function restoreWorkspace(){
 }
 async function exportAll(){
   if(!lastResult)return;let reportView=view;const request={...lastResult.request,format:$('export-format').value,sources:slots.map(s=>s?.name??null),generated_at:new Date().toISOString(),max_rows:100000};
-  if(view==='tree'){reportView='dominated';request.id=lastResult.data.node.id;}
+  if(view==='tree'){request.id=lastResult.data.node.id;}
   request.view=reportView;
   const data=await rpc('export',{slot:lastResult.slot,request});
   const format=request.format,type={json:'application/json',csv:'text/csv',html:'text/html'}[format];
   const url=URL.createObjectURL(new Blob([data],{type:type+';charset=utf-8'})),a=element('a');a.href=url;a.download='moonheap-'+view+'-report.'+format;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   $('notice').textContent='已导出全部匹配结果。报告超过 100000 行时会要求缩小筛选，不会静默截断。';
+}
+async function exportObject(){
+  if(!selected)return;
+  const request={view:'explain',id:selected.id,format:'html',retainer_limit:100,max_paths:5,max_depth:64,
+    sources:slots.map(s=>s?.name??null),generated_at:new Date().toISOString()};
+  if(active===2&&slots[1]&&$('identity').checked){request.same_isolate=true;request.fallback_slot=1;}
+  const data=await rpc('export',{slot:active,request});
+  const url=URL.createObjectURL(new Blob([data],{type:'text/html;charset=utf-8'})),a=element('a');
+  a.href=url;a.download='moonheap-object-'+selected.id+'.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  $('notice').textContent='已导出对象证据：持有者、根路径、支配关系和分配来源。报告注明路径与引用是否全部列出。';
 }
 for(const input of document.querySelectorAll('input[type=file]'))input.onchange=()=>{const files=[...input.files];input.value='';if(files.length)loadFiles(Number(input.dataset.slot),files);};
 for(const slot of document.querySelectorAll('.slot')){
@@ -300,6 +311,7 @@ $('save-workspace').onclick=()=>run(saveWorkspace,'正在将原始快照和调�
 $('restore-workspace').onclick=()=>run(restoreWorkspace,'正在恢复本机工作区…');
 $('clear-saved').onclick=()=>run(async()=>{await database('delete');$('notice').textContent='已删除本浏览器保存的数据，当前分析与原始文件不受影响。';});
 $('export').onclick=()=>run(exportAll,'正在生成全部匹配结果的报告…');
+$('export-object').onclick=()=>run(exportObject,'正在汇总对象证据…');
 $('help').onclick=()=>$('help-dialog').showModal();$('help-close').onclick=()=>$('help-dialog').close();
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();$('search').focus();}if(e.key==='Escape'&&!busy)clearDetail();});
 updateSlots();updateControls();renderBookmarks();

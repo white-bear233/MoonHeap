@@ -90,6 +90,17 @@ node bin/moonheap.mjs report examples/before.heapsnapshot examples/growth.heapsn
 
 `report` 收集全部匹配行，忽略分页起点；每个结果列表默认最多 100000 行，可用 `--max-rows` 调整。文件存在时须明确传 `--force` 才覆盖。CSV 保护文本公式与精确 ID；HTML 自包含且不运行脚本。详见 [API](docs/API.md)。
 
+## 一次导出一个对象的调查证据
+
+网页中打开对象详情，点击「导出对象证据」，即可得到自包含 HTML：对象大小、直接持有者、根路径、支配祖先、分配位置与调用栈集中展示。路径搜索和引用列表达到上限时，报告会标记尚未穷尽；缺失的分配记录也会明确说明。
+
+```sh
+node bin/moonheap.mjs explain examples/shared.heapsnapshot --id 7 --json
+node bin/moonheap.mjs report examples/shared.heapsnapshot --view explain --id 7 --format html --output work/object.html
+```
+
+`--retainer-limit` 控制直接持有引用数量（默认 100，最多 1000）；`--max-paths` 与 `--max-depth` 控制路径搜索。CLI 支持 JSON/HTML 对象报告；网页在确认同一实例后可回查增长快照的分配来源，并记录来源快照。
+
 ## 在 CI 中检查清理后的残留
 
 `check` 对全部匹配的新增存活对象执行预算检查，不受分页影响。默认要求零残留；也可设置允许的对象数、浅体积字节数，或同时设置两者。浅体积不会重复累加共享子树的保留体积。
