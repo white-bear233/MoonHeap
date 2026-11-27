@@ -14,11 +14,16 @@ jobs:
           node-version: 24
       - name: Install tested MoonBit
         run: |
-          curl --retry 3 -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s '0.10.20+65efd5b93'
+          curl --retry 3 -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s "$(cat .moonbit-version)"
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
       - name: Verify version and library
         run: |
           node -e "if ('v' + JSON.parse(require('fs').readFileSync('package.json')).version !== process.env.GITHUB_REF_NAME) process.exit(1)"
+          moon version --all
+          moon check --target all --deny-warn
+          moon build --target js --deny-warn
+          moon build --target wasm-gc --deny-warn
+          moon build --target native --deny-warn
           moon test --target js --deny-warn
           moon test --target wasm-gc --deny-warn
           moon test --target native --deny-warn

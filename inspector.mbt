@@ -57,7 +57,30 @@ fn Inspector::get(self : Inspector, handle : Int32) -> Analysis raise HeapError 
 ///|
 fn request(input : String) -> Json raise HeapError {
   guard input.length() <= 8192 else { raise Limit("request too large") }
-  let v = @json.parse(input, reject_duplicate_keys=true, max_nesting_depth=16) catch {
+  // Enforce our request budget independently of the standard JSON parser's
+  // deprecated max_nesting_depth argument. Brackets inside strings are data.
+  let mut depth = 0
+  let mut quoted = false
+  let mut escaped = false
+  for c in input.iter() {
+    if quoted {
+      if escaped {
+        escaped = false
+      } else if c == '\\' {
+        escaped = true
+      } else if c == '"' {
+        quoted = false
+      }
+    } else if c == '"' {
+      quoted = true
+    } else if c == '[' || c == '{' {
+      depth += 1
+      guard depth <= 16 else { raise Invalid("request nesting exceeds 16") }
+    } else if c == ']' || c == '}' {
+      depth -= 1
+    }
+  }
+  let v = @json.parse(input, reject_duplicate_keys=true) catch {
     _ => raise Invalid("invalid request JSON")
   }
   guard v is Object(_) else { raise Invalid("request must be an object") }

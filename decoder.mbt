@@ -86,7 +86,6 @@ fn Decoder::complete_token(self : Decoder) -> Unit raise HeapError {
     self.token.to_string(),
     reject_duplicate_keys=true,
     preserve_number_repr=true,
-    max_nesting_depth=64,
   ) catch {
     _ => raise Invalid("invalid JSON field or string")
   }

@@ -41,7 +41,7 @@ node scripts/serve.mjs
 3. 点击候选，查看清理快照中的根路径，定位 Window → PhotoCache → Array。
 4. 体验支配树、书签、保存恢复，再导出 HTML 报告。来源信息缺失时会明确说明；带分配跟踪的真实示例见下节。
 
-从源代码开发，需要 MoonBit 工具链（本版验证版本为 moonc v0.10.20+65efd5b93）：
+从源代码开发，需要 **MoonBit 1.0.0-rc1 或更新版本**；CI 固定版本见 [.moonbit-version](.moonbit-version)，当前为 `1.0.0-rc1+3c0520448`。先运行 `moonc -v` 确认版本，旧工具链可通过 `moon upgrade` 更新：
 
 ```sh
 git clone https://github.com/white-bear233/MoonHeap.git

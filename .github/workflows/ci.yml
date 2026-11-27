@@ -2,8 +2,6 @@ name: CI
 on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
-env:
-  MOONBIT_VERSION: 0.10.20+65efd5b93
 jobs:
   core:
     runs-on: ubuntu-latest
@@ -15,9 +13,11 @@ jobs:
       - uses: actions/checkout@v5
       - name: Install tested MoonBit toolchain
         run: |
-          curl --retry 3 -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s "$MOONBIT_VERSION"
+          curl --retry 3 -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s "$(cat .moonbit-version)"
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
       - run: moon version --all
+      - run: moon check --target ${{ matrix.target }} --deny-warn
+      - run: moon build --target ${{ matrix.target }} --deny-warn
       - run: moon test --target ${{ matrix.target }} --deny-warn
       - run: moon run cmd/main --target ${{ matrix.target }}
   host:
@@ -33,8 +33,11 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: Install tested MoonBit toolchain
         run: |
-          curl --retry 3 -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s "$MOONBIT_VERSION"
+          curl --retry 3 -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s "$(cat .moonbit-version)"
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - run: moon version --all
+      - run: moon check --target js --deny-warn
+      - run: moon build --target js --deny-warn
       - run: moon test --target js --deny-warn
       - run: |
           moon info

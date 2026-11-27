@@ -46,3 +46,19 @@ test "inspector lifecycle and versioned JSON errors" {
   assert_true(failure(Limit("budget")).contains("resource_limit"))
   assert_true(success(response).contains("api_version"))
 }
+
+///|
+test "request depth budget survives JSON parser API migration" {
+  let nested = "[".repeat(15) + "0" + "]".repeat(15)
+  ignore(request("{\"extra\":" + nested + "}"))
+  ignore(request("{\"query\":\"[[[[[[[[[[[[[[[[[[[[\\\"\"}"))
+  assert_true(
+    try {
+      ignore(request("{\"extra\":[" + nested + "]}"))
+      false
+    } catch {
+      Invalid(_) => true
+      _ => false
+    },
+  )
+}
