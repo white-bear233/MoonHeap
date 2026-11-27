@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { query_snapshot, diff_snapshots, investigate_snapshots, export_report, close_snapshot } from '../dist/moonheap.mjs';
-import { loadFile, unwrap, fail, saveOutput, verifyManifest } from '../lib/host.mjs';
+import { loadFile, unwrap, fail, saveOutput, readCaptureManifest, protectInputs } from '../lib/host.mjs';
 
 const HELP = `MoonHeap — offline V8 memory investigation
 Usage: node bin/moonheap.mjs <command> <snapshot> [options]
@@ -91,8 +91,10 @@ try {
       if (run.status!==0) fail('io_error',run.stderr.trim()||'Capture process failed');
       data=JSON.parse(run.stdout); raw=JSON.stringify({api_version:1,ok:true,data}); output=json?raw:JSON.stringify(data,null,2);
     } else {
-      if (options.manifest) { options.provenance_run_id=await verifyManifest(options.manifest,files); options.same_isolate=true; }
-      for (const path of files) handles.push(await loadFile(path,options));
+      await protectInputs(options.output,[...files,...(options.manifest?[options.manifest]:[])]);
+      const provenance = options.manifest ? await readCaptureManifest(options.manifest,files) : null;
+      if (provenance) { options.provenance_run_id=provenance.run_id; options.same_isolate=true; }
+      for (let i=0;i<files.length;i++) handles.push(await loadFile(files[i],options,()=>{},provenance?.snapshots[i]));
       if (command==='report') {
         if (handles.length===2) options.after_handle=handles[1];
         if (handles.length===3) { options.growth_handle=handles[1]; options.cleanup_handle=handles[2]; }
