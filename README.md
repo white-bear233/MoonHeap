@@ -28,7 +28,7 @@ MoonHeap 是用 MoonBit 编写的离线 V8 堆快照分析库，附带命令行�
 
 ## 三分钟体验
 
-推荐下载 [MoonHeap v0.2.0](https://github.com/white-bear233/MoonHeap/releases/tag/v0.2.0) 的预编译 ZIP。安装 Node.js 22+，解压后进入目录运行：
+推荐下载 [MoonHeap v0.3.0](https://github.com/white-bear233/MoonHeap/releases/tag/v0.3.0) 的预编译 ZIP。安装 Node.js 22+，解压后进入目录运行：
 
 ```sh
 node scripts/serve.mjs
@@ -82,7 +82,7 @@ node bin/moonheap.mjs report examples/growth.heapsnapshot --view nodes --format 
 node bin/moonheap.mjs report examples/before.heapsnapshot examples/growth.heapsnapshot examples/residual.heapsnapshot --view investigate --same-isolate --format csv --output work/survivors.csv
 ```
 
-完整命令：summary、validate、nodes、groups、node、refs、path、paths、source、tree、cycles、cycle、dominated、diff、investigate、report、capture。运行 `--help` 查看所有参数。
+完整命令：summary、validate、nodes、groups、node、explain、refs、path、paths、source、tree、cycles、cycle、dominated、diff、investigate、check、report、capture。运行 `--help` 查看所有参数。
 
 默认每份文件上限 **256 MiB**，`--max-mib` 可设 1–1024；网页也可调整。节点、边、元数据和计算仍有独立预算，不保证上限内的所有复杂图都能在任意机器处理。实际内存大于文件大小。
 
@@ -117,7 +117,7 @@ node bin/moonheap.mjs check examples/before.heapsnapshot examples/growth.heapsna
 ## 作为 MoonBit 库
 
 ```sh
-moon add white-bear233/moonheap@0.2.0
+moon add white-bear233/moonheap@0.3.0
 ```
 
 在调用包的 `moon.pkg` 中导入 `"white-bear233/moonheap" @heap`。小文本可用 `@heap.parse(input)`；逐块处理可用：
@@ -150,7 +150,7 @@ npm test
 node scripts/benchmark.mjs
 ```
 
-34 个 MoonBit 测试包含 150 个随机图的独立删除节点验证、增量解析、分配来源、多路径、循环、三阶段存活和跨页报告。Node 与浏览器测试验证真实清理及残留场景、65 MiB 逐块输入、错误恢复、保存恢复和完整导出。Linux CI 还验证 native 核心及 Node 22/24，详见 [VALIDATION.md](docs/VALIDATION.md)。
+40 个 MoonBit 测试包含 150 个随机图的独立删除节点验证、增量解析、分配来源、多路径、循环、三阶段存活、跨页报告、残留预算和对象证据。15 个 Node 集成测试及浏览器流程验证真实清理与残留、65 MiB 逐块输入、来源顺序与哈希、输入文件保护、保存恢复和完整导出。Linux CI 还验证 native 核心及 Node 22/24，详见 [VALIDATION.md](docs/VALIDATION.md) 和 [11 月验收索引](docs/ACCEPTANCE.md)。
 
 ```text
 快照字节流 → MoonBit Decoder → 引用图 / 支配树 / 来源索引

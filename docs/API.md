@@ -148,6 +148,7 @@ CLI 使用 `--json` 时，stdout 仅含成功结果，stderr 含错误信封；�
 | 3 | resource_limit | 文件、输出、节点或算法预算超限 |
 | 4 | identity_conflict | 身份矛盾、来源校验失败 |
 | 5 | io_error | 文件、采集子进程等宿主错误 |
+| 6 | 无（ok=true，data.status=exceeded） | check 已完成，但超出残留预算 |
 
 validate 会完整解析和分析。CLI 每次重新打开文件，交互应用优先重用 Inspector。capture 运行指定模块的 setup/exercise/cleanup；--manifest 验证输入与采集清单的字节数和 SHA-256 一致，然后启用同 isolate 模式。清单是采集来源记录，不是对任意外来文件的加密身份认证。
 

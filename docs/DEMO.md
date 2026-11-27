@@ -54,3 +54,9 @@ CSV 供表格查看，JSON 供程序处理，超过明确预算会报错。
 展示 GitHub CI、Mooncakes 包、命令行和预编译发行版。核心算法在 MoonBit，
 CLI/网页复用同一引擎。说明默认每份 256 MiB、可配置预算、WeakMap 保守语义，
 不把保留体积当 RSS，也不输出自动泄漏判决。
+
+## 0.3.0 新增演示
+
+对象详情点击「导出对象证据」，检查持有者、根路径、支配祖先与分配来源，以及搜索截断提示。
+命令行 `check` 对完整清理样例返回 0，对 residual 样例的 PhotoEntry 默认返回 6，
+增加 `--max-survivors 2` 后返回 0。完整命令与退出码见 [ACCEPTANCE.md](ACCEPTANCE.md)。

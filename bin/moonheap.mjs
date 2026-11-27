@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { query_snapshot, diff_snapshots, investigate_snapshots, check_cleanup, export_report, close_snapshot } from '../dist/moonheap.mjs';
@@ -52,7 +53,7 @@ function human(data) {
 }
 try {
   if (!args.length || args.includes('--help') || args.includes('-h')) console.log(HELP);
-  else if (args[0] === '--version') console.log('0.2.0');
+  else if (args[0] === '--version') console.log(JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8')).version);
   else {
     const command = args.shift(), files = [], options = {}, flags = new Set();
     const strings = {'--id':'id','--query':'query','--kind':'kind','--order':'order','--status':'status','--reachability':'reachability',

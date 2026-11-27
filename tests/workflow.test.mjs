@@ -75,7 +75,7 @@ test('streaming file budgets allow files beyond old 64 MiB cap without loading t
 test('CLI reports write complete rows and refuse implicit replacement', async () => {
   const dir=await mkdtemp(join(tmpdir(),'moonheap-report-'));
   try {
-    const output=join(dir,'report.csv');
+    const output=join(dir,'new-report-directory','report.csv');
     const args=['bin/moonheap.mjs','report','examples/growth.heapsnapshot','--view','nodes','--format','csv','--output',output,'--json'];
     let r=spawnSync(process.execPath,args,{encoding:'utf8'}); assert.equal(r.status,0,r.stderr);
     assert.equal((await readFile(output,'utf8')).trim().split('\n').length,43);

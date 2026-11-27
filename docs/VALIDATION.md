@@ -1,14 +1,14 @@
 # 验证与复现记录
 
-记录日期：2026-11-12，版本 0.2.0。所有真实快照来自专用测试进程。
+验收复核日期：2026-11-27，版本 0.3.0。所有真实快照来自专用测试进程；下方历史测量保留原始日期与结果。
 
 ## 环境与核心
 
 Windows x64，Intel Core i7-12700H；Node v24.18.0 与 v22.23.5。
-MoonBit 工具链为 moonc v0.10.20+65efd5b93。Linux GitHub Actions 还验证 native，
+MoonBit 工具链为 moonc v1.0.0-rc1+3c0520448（2026-11-26）。Linux GitHub Actions 还验证 native，
 以及 Node 22/24 的宿主和 Node 24 的浏览器流程。具体状态见 [CI](https://github.com/white-bear233/MoonHeap/actions/workflows/ci.yml)。
 
-**34 个 MoonBit 测试**覆盖元数据重排、UInt64 ID、畸形输入、增量读取、转义与整数跨块、
+**40 个 MoonBit 测试**覆盖元数据重排、UInt64 ID、畸形输入、增量读取、转义与整数跨块、
 资源限制、可达性、共享/弱/快捷/自引用、支配、分页、分配来源、多路径、循环、
 保留变化、三阶段调查、歧义身份排除与完整报告。
 
@@ -29,15 +29,21 @@ npm run build
 npm test
 ```
 
-本机 JS/Wasm GC 均为 34/34；Windows 未安装 MSVC，native 结果由 Linux CI 提供。
+本机 JS/Wasm GC 均为 40/40；Windows 未安装 MSVC，native 结果由 Linux CI 提供。
+
+0.3.0 新增请求深度边界、预算边界、身份歧义不能通过、超过 1000 个候选的全量判断、
+共享持有者证据、截断标记、不可达对象及 HTML 证据/支配树上下文测试。
+旧工具链构建会提示升级；CI 与发布流程从同一 `.moonbit-version` 读取固定版本。
 
 ## Node 集成与真实数据
 
-9 个 Node 集成测试覆盖 CLI、三会话桥接、错误退出码、非法 UTF-8、资源预算、
+15 个 Node 集成测试覆盖 CLI、三会话桥接、错误退出码、非法 UTF-8、资源预算、
 真实快照独立核对、本地服务、通用采集与来源校验、逐块文件和完整报告。
+新增清单错序/重复/缺失字段、实际读取哈希、输入文件与硬链接保护、预算退出码、对象证据完整性；
+输出目录缺失时自动建立，已存在的报告仍需 `--force`。
 Node 22/24 均执行完整测试。测试需要生成真实快照，机器压力会改变耗时和总体节点数。
 
-真实完全清理场景一次本机 Node 24 记录：
+真实完全清理场景一次本机 Node 24 历史记录（2026-11-12）：
 
 | 阶段 | 节点数 | self_size 合计 | MoonHeapMarker 实例 | 标记对象浅体积 |
 |---|---:|---:|---:|---:|
@@ -77,6 +83,7 @@ node --test tests/workflow.test.mjs
 - 三阶段 2→18→4、2 个新增存活条目、在 C 中检查持有路径。
 - 入边/出边、最短与多条根路径、分配信息与缺失提示。
 - 支配树展开、祖先导航、体积分布图、循环组与成员。
+- 对象证据 HTML 下载、持有者/根路径/来源分节、支配树 JSON 保留当前对象及祖先。
 - 过滤、精确大 ID、42 行完整导出（页面只有 25 行）。
 - 书签与对象前进/后退，保存工作区、刷新、恢复文件/筛选/书签、删除保存。
 - 对象名称含 HTML 时仅显示文本；文件替换清除来源声明。
@@ -105,7 +112,7 @@ npx --yes --package @playwright/cli@0.1.24 playwright-cli -s=moonheap close
 node scripts/benchmark.mjs
 ```
 
-本机一次记录：
+本机历史记录（2026-11-12，0.2.0；不作为 0.3.0 性能承诺）：
 
 | 图 | 节点 / 边 | 输入字节 | 打开并分析 | 排序查询 | 峰值 RSS |
 |---|---|---:|---:|---:|---:|
@@ -121,7 +128,8 @@ node scripts/benchmark.mjs
 
 ## 发布复核
 
-moon publish --dry-run 已完成打包、解包和重新检查，注册表返回 202 Accepted。
-正式包消费者和 GitHub 分发包采用独立目录验证：从 Mooncakes 下载，
-运行新 Decoder/Inspector 接口；解压发行 ZIP 后直接运行预编译 CLI，不依赖原仓库编译路径。
-发布状态与资产见 [v0.2.0](https://github.com/white-bear233/MoonHeap/releases/tag/v0.2.0)。
+0.3.0 的 `moon publish --dry-run` 已完成打包、解包与重新检查，注册表返回 202 Accepted。
+发行流程中的 `scripts/verify-distribution.py` 会核对 SHA-256 并解压至新目录，
+验证 CLI 版本、共享对象引用、证据报告、预算通过及超限退出码，不读取原仓库构建目录。
+正式包安装命令为 `moon add white-bear233/moonheap@0.3.0`。
+发布状态与资产见 [v0.3.0](https://github.com/white-bear233/MoonHeap/releases/tag/v0.3.0)。
